@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schul-Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Base */
+  --bg:        #090e0c;
+  --bg2:       #0d1410;
+  --surface:   #111a16;
+  --surface2:  #172019;
+  --border:    #1f2e26;
+  --border2:   #243628;
+
+  /* Text */
+  --text:      #d4e8dc;
+  --text-dim:  #7a9e88;
+  --muted:     #3a5444;
+
+  /* Brand colors — all muted/desaturated */
+  --green:     #4ead72;   /* online */
+  --green-dim: rgba(78,173,114,0.10);
+  --green-glow:rgba(78,173,114,0.18);
+
+  --teal:      #3a9e8a;   /* präsenz */
+  --teal-dim:  rgba(58,158,138,0.10);
+
+  --sage:      #7aab8a;   /* urlaub */
+  --sage-dim:  rgba(122,171,138,0.10);
+
+  --amber:     #c8a84b;   /* accent / ticker */
+  --amber-dim: rgba(200,168,75,0.12);
+
+  --danger:    #b05050;
+  --warn:      #b07840;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+/* Subtle grid */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(78,173,114,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(78,173,114,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 44px 20px 80px;
+}
+
+/* ── HEADER ── */
+.header { margin-bottom: 48px; }
+
+.header-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.28em;
+  color: var(--green); text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0.75;
+}
+.header-eyebrow::before {
+  content: ''; width: 20px; height: 1px; background: var(--green);
+}
+
+.header h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 9vw, 5.5rem);
+  letter-spacing: 0.05em; line-height: 0.93;
+  color: var(--text);
+  cursor: default; user-select: none;
+}
+.header h1 em {
+  font-style: normal;
+  color: var(--green);
+  opacity: 0.9;
+}
+
+.header-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem; color: var(--muted);
+  margin-top: 16px; letter-spacing: 0.06em;
+}
+
+/* ── TICKER ── */
+.ticker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem; letter-spacing: 0.08em;
+  padding: 9px 18px; margin-bottom: 2px;
+  display: flex; align-items: center; gap: 10px;
+  border-left: 2px solid;
+}
+.ticker.neutral { background: var(--surface); border-color: var(--muted); color: var(--text-dim); }
+.ticker.good    { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.ticker.warn    { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+.ticker.danger  { background: rgba(176,80,80,0.12); border-color: var(--danger); color: var(--danger); }
+.ticker.urlaub  { background: var(--sage-dim); border-color: var(--sage); color: var(--sage); }
+
+.ticker-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.25} }
+
+/* ── HERO STATS ── */
+.hero-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 2px; margin-bottom: 2px;
+}
+
+.hero-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 26px 24px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.25s;
+}
+.hero-stat:hover { border-color: var(--border2); }
+
+.hero-stat::after {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 2px;
+}
+.hero-stat.online-stat::after  { background: linear-gradient(90deg, var(--green), transparent); }
+.hero-stat.praesenz-stat::after{ background: linear-gradient(90deg, var(--teal), transparent); }
+
+.hero-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 7vw, 5rem);
+  line-height: 1; letter-spacing: 0.02em;
+}
+.online-stat  .hero-num { color: var(--green); }
+.praesenz-stat .hero-num { color: var(--teal); }
+
+.hero-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); margin-top: 6px;
+}
+
+.hero-limit {
+  position: absolute; top: 18px; right: 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; color: var(--muted); text-align: right;
+  line-height: 1.4;
+}
+.hero-limit strong { display: block; font-size: 1rem; font-weight: 600; color: var(--text-dim); }
+
+/* ── PROGRESS ── */
+.status-bar-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-top: none; padding: 18px 24px; margin-bottom: 2px;
+}
+.bar-labels {
+  display: flex; justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; color: var(--muted);
+  margin-bottom: 8px; letter-spacing: 0.05em;
+}
+.segmented-bar {
+  height: 4px; background: rgba(255,255,255,0.04);
+  overflow: hidden; display: flex; gap: 1px;
+}
+.seg-online  { background: var(--green); height: 100%; transition: width 0.9s cubic-bezier(.22,1,.36,1); }
+.seg-praesenz{ background: var(--teal);  height: 100%; transition: width 0.9s cubic-bezier(.22,1,.36,1); }
+
+/* ── MINI CARDS ── */
+.mini-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 2px; margin-top: 2px; margin-bottom: 36px;
+}
+.mini-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 16px 12px; text-align: center;
+}
+.mini-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem; line-height: 1;
+}
+.mini-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.09em; margin-top: 5px;
+}
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── TODAY ── */
+.today-block {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px; margin-bottom: 36px;
+}
+.btn-today {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem; letter-spacing: 0.08em;
+  padding: 28px 10px; cursor: pointer;
+  transition: all 0.18s;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  border: 2px solid;
+}
+.btn-today-icon { font-size: 3.4rem; line-height: 1; filter: drop-shadow(0 0 6px currentColor); }
+.btn-today-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.btn-today-online {
+  background: rgba(78,173,114,0.18); border-color: rgba(78,173,114,0.6);
+  color: var(--green);
+}
+.btn-today-online .btn-today-sub { color: rgba(78,173,114,0.7); }
+.btn-today-online:hover { background: rgba(78,173,114,0.28); border-color: var(--green); box-shadow: 0 0 24px rgba(78,173,114,0.2); }
+.btn-today-praesenz {
+  background: rgba(58,158,138,0.18); border-color: rgba(58,158,138,0.6);
+  color: var(--teal);
+}
+.btn-today-praesenz .btn-today-sub { color: rgba(58,158,138,0.7); }
+.btn-today-praesenz:hover { background: rgba(58,158,138,0.28); border-color: var(--teal); box-shadow: 0 0 24px rgba(58,158,138,0.2); }
+.btn-today-urlaub {
+  background: rgba(200,168,75,0.18); border-color: rgba(200,168,75,0.6);
+  color: var(--amber);
+}
+.btn-today-urlaub .btn-today-sub { color: rgba(200,168,75,0.7); }
+.btn-today-urlaub:hover { background: rgba(200,168,75,0.28); border-color: var(--amber); box-shadow: 0 0 24px rgba(200,168,75,0.2); }
+.btn-today.active.btn-today-online  { background: rgba(78,173,114,0.32); border-color: var(--green); box-shadow: 0 0 32px rgba(78,173,114,0.3); }
+.btn-today.active.btn-today-praesenz{ background: rgba(58,158,138,0.32); border-color: var(--teal);  box-shadow: 0 0 32px rgba(58,158,138,0.3); }
+.btn-today.active.btn-today-urlaub  { background: rgba(200,168,75,0.32); border-color: var(--amber); box-shadow: 0 0 32px rgba(200,168,75,0.3); }
+
+/* ── CALENDAR ── */
+.calendar-block {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 20px; margin-bottom: 36px;
+}
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem; letter-spacing: 0.08em; color: var(--text-dim);
+}
+.cal-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; padding: 5px 12px; cursor: pointer;
+  transition: all 0.15s;
+}
+.cal-btn:hover { border-color: var(--border2); color: var(--text-dim); }
+
+.cal-weekdays {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 2px; margin-bottom: 2px;
+}
+.cal-weekday {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.56rem; letter-spacing: 0.12em;
+  color: var(--muted); text-align: center; padding: 4px 0;
+}
+.cal-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+
+.cal-day {
+  aspect-ratio: 1;
+  background: rgba(255,255,255,0.015); border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.12s;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); gap: 2px;
+}
+.cal-day:hover { background: var(--surface2); border-color: var(--border2); color: var(--text-dim); }
+.cal-day.today   { border-color: var(--amber);  color: var(--amber);  background: rgba(200,168,75,0.22); border-width: 2px; }
+.cal-day.online  { background: rgba(78,173,114,0.32);  border-color: var(--green); color: var(--green);  border-width: 2px; }
+.cal-day.praesenz{ background: rgba(58,158,138,0.32);  border-color: var(--teal);  color: var(--teal);   border-width: 2px; }
+.cal-day.urlaub  { background: rgba(200,168,75,0.32);  border-color: var(--amber); color: var(--amber);  border-width: 2px; }
+.cal-day.empty   { background: none; border-color: transparent; cursor: default; }
+.cal-day.future  { opacity: 0.2; cursor: default; pointer-events: none; }
+.cal-day-num { font-size: 0.72rem; font-weight: 700; line-height: 1; }
+.cal-day-icon { font-size: 1.35rem; line-height: 1; filter: drop-shadow(0 0 3px currentColor); }
+
+.cal-legend {
+  display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; color: var(--muted); letter-spacing: 0.05em;
+}
+.ldot { display: inline-block; width: 7px; height: 7px; margin-right: 4px; }
+.ldot.online  { background: var(--green); }
+.ldot.praesenz{ background: var(--teal); }
+.ldot.urlaub  { background: var(--sage); }
+.ldot.today   { background: var(--amber); }
+
+
+/* ── EMAIL ── */
+
+
+.auto-mail-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.auto-mail-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.auto-mail-label span { color: var(--muted); font-size: 0.58rem; display: block; margin-top: 2px; }
+.toggle-switch {
+  width: 44px; height: 24px; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 12px;
+  cursor: pointer; transition: all 0.25s; position: relative; flex-shrink: 0;
+}
+.toggle-switch.on { background: rgba(78,173,114,0.3); border-color: var(--green); }
+.toggle-switch::after {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--muted); top: 3px; left: 3px;
+  transition: all 0.25s;
+}
+.toggle-switch.on::after { background: var(--green); left: 23px; box-shadow: 0 0 8px rgba(78,173,114,0.6); }
+
+.email-provider-row {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.provider-btn {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.06em; padding: 7px 14px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--muted); transition: all 0.15s;
+}
+.provider-btn:hover { border-color: var(--border2); color: var(--text-dim); }
+.provider-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+
+.email-block {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 22px; margin-bottom: 36px;
+}
+.email-settings-row {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.email-settings-row .fg { min-width: 140px; }
+input[type="email"], input[type="text"] {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; padding: 9px 11px; outline: none; width: 100%;
+  transition: border-color 0.15s;
+}
+input[type="email"]:focus, input[type="text"]:focus { border-color: var(--green); color: var(--text); }
+.email-btn-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.email-btn {
+  flex: 1; min-width: 140px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.05em; padding: 12px 14px; cursor: pointer;
+  border: 2px solid; display: flex; align-items: center; gap: 8px;
+  transition: all 0.15s; font-weight: 500;
+}
+.email-btn span { font-size: 1.2rem; }
+.email-btn-online  { background: rgba(78,173,114,0.1);  border-color: rgba(78,173,114,0.4);  color: var(--green); }
+.email-btn-online:hover  { background: rgba(78,173,114,0.22); border-color: var(--green); }
+.email-btn-praesenz{ background: rgba(58,158,138,0.1);  border-color: rgba(58,158,138,0.4);  color: var(--teal); }
+.email-btn-praesenz:hover{ background: rgba(58,158,138,0.22); border-color: var(--teal); }
+.email-btn-urlaub  { background: rgba(200,168,75,0.1);  border-color: rgba(200,168,75,0.4);  color: var(--amber); }
+.email-btn-urlaub:hover  { background: rgba(200,168,75,0.22); border-color: var(--amber); }
+
+/* ── SETTINGS ── */
+.settings-block {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 22px; margin-bottom: 36px;
+}
+.settings-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.fg { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 110px; }
+.fg label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+}
+input[type="number"] {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; padding: 9px 11px; outline: none; width: 100%;
+  transition: border-color 0.15s;
+}
+input:focus { border-color: var(--green); color: var(--text); }
+
+.calc-preview {
+  margin-top: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.63rem; color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── HISTORY ── */
+.history-toggle {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+}
+.history-toggle:hover { border-color: var(--border2); color: var(--text-dim); }
+.history-list { display: none; margin-bottom: 36px; }
+.history-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.h-date { font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; color: var(--muted); width: 100px; }
+.h-type { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.06em; }
+.h-type.online  { color: var(--green); }
+.h-type.praesenz{ color: var(--teal); }
+.h-type.urlaub  { color: var(--sage); }
+.btn-del {
+  background: none; border: none; color: var(--muted);
+  font-size: 0.72rem; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; padding: 4px 8px;
+  transition: color 0.15s;
+}
+.btn-del:hover { color: var(--danger); }
+.empty {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; color: var(--muted); padding: 20px 0;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--surface2); border: 1px solid var(--green);
+  color: var(--green); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.05em; padding: 11px 18px;
+  transform: translateY(70px); opacity: 0;
+  transition: all 0.3s cubic-bezier(.22,1,.36,1); z-index: 100;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── EASTER EGG ── */
+.egg-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5,10,8,0.92);
+  z-index: 999; display: none;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.egg-overlay.show { display: flex; }
+
+.egg-box {
+  background: var(--surface);
+  border: 1px solid var(--green);
+  padding: 40px 36px;
+  max-width: 460px; width: 90%; text-align: center;
+  box-shadow: 0 0 60px rgba(78,173,114,0.12);
+  animation: eggPop 0.35s cubic-bezier(.22,1,.36,1);
+}
+@keyframes eggPop {
+  from { transform: scale(0.75); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.egg-emoji { font-size: 3.5rem; margin-bottom: 14px; display: block; animation: wobble 1.5s ease-in-out infinite; }
+@keyframes wobble {
+  0%,100% { transform: rotate(-8deg); }
+  50%      { transform: rotate(8deg); }
+}
+
+.egg-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem; letter-spacing: 0.1em;
+  color: var(--green); margin-bottom: 14px;
+}
+
+.egg-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem; color: var(--text-dim);
+  line-height: 1.9; margin-bottom: 24px;
+}
+.egg-text .hl { color: var(--amber); }
+.egg-text .hl2 { color: var(--green); }
+.egg-text .tiny { font-size: 0.6rem; color: var(--muted); }
+
+.egg-close {
+  background: none; border: 1px solid var(--green);
+  color: var(--green); font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem; letter-spacing: 0.12em;
+  padding: 10px 28px; cursor: pointer; transition: all 0.15s;
+}
+.egg-close:hover { background: var(--green-dim); }
+
+.confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 1000; overflow: hidden; }
+.confetti-piece {
+  position: absolute; top: -16px;
+  animation: fall linear forwards;
+}
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: 0; } }
+
+@media (max-width: 520px) {
+  .hero-stats  { grid-template-columns: 1fr; }
+  .mini-grid   { grid-template-columns: 1fr 1fr; }
+  .today-block { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- EASTER EGG MODAL -->
+<div class="egg-overlay" id="eggOverlay">
+  <div class="egg-box">
+    <span class="egg-emoji">🥚</span>
+    <div class="egg-title">EASTER EGG GEFUNDEN</div>
+    <div class="egg-text">
+      Respekt. 5 Klicks auf den Titel.<br>
+      Das nennt man <span class="hl">Ausdauer</span> — genau die<br>
+      brauchst du auch für die <span class="hl2">175 Präsenztage</span>. 😅<br><br>
+      <span class="hl">GEHEIMER PRO-TIPP:</span><br>
+      Wenn der Lehrer fragt warum du online bist:<br>
+      <em>"Ich optimiere meine Lernumgebung<br>
+      für kognitive Höchstleistung."</em><br><br>
+      Klingt professionell. Bedeutet nichts.<br>
+      Funktioniert immer. 👨‍💼<br><br>
+      <span class="tiny">// secret_code: 41%_ONLINE_GANG • version 1.0.0</span>
+    </div>
+    <button class="egg-close" onclick="closeEgg()">ZURÜCK ZUR REALITÄT</button>
+  </div>
+</div>
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">Anwesenheits-System v1</div>
+    <h1 onclick="eggClick()" title="">SCHUL<br>TRACKER</h1>
+    <div class="header-sub" id="headerSub">// initialisiere...</div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker neutral" id="ticker">
+    <span class="ticker-dot"></span>
+    <span id="tickerText">SYSTEM BEREIT</span>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero-stats">
+    <div class="hero-stat online-stat">
+      <div class="hero-num" id="onlineNum">0</div>
+      <div class="hero-label">Online-Tage genutzt</div>
+      <div class="hero-limit">MAX ERLAUBT<strong id="onlineMax">—</strong></div>
+    </div>
+    <div class="hero-stat praesenz-stat">
+      <div class="hero-num" id="praesenzNum">0</div>
+      <div class="hero-label">Präsenz-Tage absolviert</div>
+      <div class="hero-limit">MINDEST-PFLICHT<strong id="praesenzMin">—</strong></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="status-bar-wrap">
+    <div class="bar-labels">
+      <span id="barLabelOnline">ONLINE 0.0%</span>
+      <span id="barLabelPraesenz">PRÄSENZ 0.0%</span>
+      <span id="barLabelFree">OFFEN —%</span>
+    </div>
+    <div class="segmented-bar">
+      <div class="seg-online"   id="segOnline"   style="width:0%"></div>
+      <div class="seg-praesenz" id="segPraesenz" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- MINI CARDS -->
+  <div class="mini-grid">
+    <div class="mini-card">
+      <div class="mini-num" id="miniOnlineLeft" style="color:var(--green)">—</div>
+      <div class="mini-label">Online verbleibend</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-num" id="miniPraesenzLeft" style="color:var(--teal)">—</div>
+      <div class="mini-label">Präsenz noch nötig</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-num" id="miniUrlaub" style="color:var(--sage)">—</div>
+      <div class="mini-label">Urlaubstage</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-num" id="miniTotal" style="color:var(--text-dim)">—</div>
+      <div class="mini-label">Tage eingetragen</div>
+    </div>
+  </div>
+
+  <!-- HEUTE -->
+  <div class="section-label">Heute eintragen — <span id="todayDateLabel" style="color:var(--text-dim)"></span></div>
+  <div class="today-block">
+    <button class="btn-today btn-today-online" onclick="bookToday('online')" id="btnOnline">
+      <span class="btn-today-icon">🏠</span>
+      ONLINE
+      <span class="btn-today-sub">von zuhause</span>
+    </button>
+    <button class="btn-today btn-today-praesenz" onclick="bookToday('praesenz')" id="btnPraesenz">
+      <span class="btn-today-icon">🏫</span>
+      PRÄSENZ
+      <span class="btn-today-sub">vor ort</span>
+    </button>
+    <button class="btn-today btn-today-urlaub" onclick="bookToday('urlaub')" id="btnUrlaub">
+      <span class="btn-today-icon">🏖️</span>
+      URLAUB
+      <span class="btn-today-sub">frei!</span>
+    </button>
+  </div>
+
+  <!-- E-MAIL -->
+  <div class="section-label">E-Mail versenden</div>
+  <div class="email-block">
+    <div class="auto-mail-toggle">
+      <div class="auto-mail-label">
+        Auto-Mail bei Buchung
+        <span>Öffnet automatisch E-Mail beim Klick auf Online / Präsenz / Urlaub</span>
+      </div>
+      <div class="toggle-switch" id="autoMailToggle" onclick="toggleAutoMail()"></div>
+    </div>
+    <div class="email-provider-row">
+      <button class="provider-btn active" onclick="setProvider('mailto')" id="pMailto">📧 Standard</button>
+      <button class="provider-btn" onclick="setProvider('gmail')" id="pGmail">Gmail</button>
+      <button class="provider-btn" onclick="setProvider('outlook')" id="pOutlook">Outlook</button>
+      <button class="provider-btn" onclick="setProvider('yahoo')" id="pYahoo">Yahoo</button>
+      <button class="provider-btn" onclick="setProvider('gmx')" id="pGmx">GMX</button>
+      <button class="provider-btn" onclick="setProvider('web')" id="pWeb">Web.de</button>
+    </div>
+    <div class="email-settings-row">
+      <div class="fg">
+        <label>Empfänger E-Mail</label>
+        <input type="email" id="emailTo" placeholder="lehrer@schule.de" oninput="saveEmailCfg()">
+      </div>
+      <div class="fg">
+        <label>Ansprechperson</label>
+        <input type="text" id="emailRecipient" placeholder="Frau Musterfrau" oninput="saveEmailCfg()">
+      </div>
+      <div class="fg">
+        <label>Dein Name</label>
+        <input type="text" id="emailName" placeholder="Max Mustermann" oninput="saveEmailCfg()">
+      </div>
+    </div>
+    <div class="email-btn-row">
+      <button class="email-btn email-btn-online" onclick="sendMail('online')">
+        <span>🏠</span> Online-Teilnahme melden
+      </button>
+      <button class="email-btn email-btn-praesenz" onclick="sendMail('praesenz')">
+        <span>🏫</span> Präsenz bestätigen
+      </button>
+      <button class="email-btn email-btn-urlaub" onclick="sendMail('urlaub')">
+        <span>🏖️</span> Abwesenheit melden
+      </button>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);margin-top:10px;">
+      // Klick öffnet dein E-Mail-Programm mit vorausgefüllter Nachricht
+    </div>
+  </div>
+
+    <!-- KALENDER -->
+  <div class="section-label">Tage nachtragen — Klick auf Tag zum Buchen</div>
+  <div class="calendar-block">
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="prevMonth()">← ZURÜCK</button>
+      <div class="cal-title" id="calTitle">—</div>
+      <button class="cal-btn" onclick="nextMonth()">VOR →</button>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-weekday">MO</div><div class="cal-weekday">DI</div>
+      <div class="cal-weekday">MI</div><div class="cal-weekday">DO</div>
+      <div class="cal-weekday">FR</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><span class="ldot online"></span>ONLINE</span>
+      <span><span class="ldot praesenz"></span>PRÄSENZ</span>
+      <span><span class="ldot urlaub"></span>URLAUB</span>
+      <span><span class="ldot today"></span>HEUTE</span>
+      <span style="color:var(--muted)">Klick = Wechseln (leer→online→präsenz→urlaub→leer)</span>
+    </div>
+  </div>
+
+  <!-- EINSTELLUNGEN -->
+  <div class="section-label">Einstellungen</div>
+  <div class="settings-block">
+    <div class="settings-row">
+      <div class="fg">
+        <label>Gesamt Schultage</label>
+        <input type="number" id="sTotal" min="1" onchange="saveSettings()">
+      </div>
+      <div class="fg">
+        <label>Max. Online %</label>
+        <input type="number" id="sOnline" min="0" max="100" step="0.1" onchange="saveSettings()">
+      </div>
+      <div class="fg">
+        <label>Min. Präsenz %</label>
+        <input type="number" id="sPraesenz" min="0" max="100" step="0.1" onchange="saveSettings()">
+      </div>
+    </div>
+    <div class="calc-preview" id="calcPreview"></div>
+  </div>
+
+  <!-- VERLAUF -->
+  <div class="section-label" style="margin-bottom:10px;">
+    Verlauf
+    <button class="history-toggle" onclick="toggleHistory()" id="histToggle">anzeigen</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let entries  = JSON.parse(localStorage.getItem('schulEntries5') || '{}');
+  let cfg      = JSON.parse(localStorage.getItem('schulCfg5')     || '{"total":345,"onlineMax":49,"praesenzMin":51}');
+  let histOpen = false;
+  let eggClicks = 0, eggTimer = null;
+
+  const now = new Date();
+  let calYear = now.getFullYear(), calMonth = now.getMonth();
+
+  function todayStr(){ return new Date().toISOString().split('T')[0]; }
+  function fmt(s){ const [y,m,d]=s.split('-'); return d+'.'+m+'.'+y; }
+  function pad(n){ return n<10?'0'+n:''+n; }
+
+  /* ---- Easter Egg ---- */
+  function eggClick(){
+    eggClicks++;
+    clearTimeout(eggTimer);
+    eggTimer = setTimeout(()=>{ eggClicks=0; }, 1800);
+    if(eggClicks>=5){ eggClicks=0; openEgg(); }
+  }
+  function openEgg(){
+    document.getElementById('eggOverlay').classList.add('show');
+    spawnConfetti();
+  }
+  function closeEgg(){
+    document.getElementById('eggOverlay').classList.remove('show');
+    document.getElementById('confettiWrap').innerHTML='';
+  }
+  function spawnConfetti(){
+    const wrap = document.getElementById('confettiWrap');
+    wrap.innerHTML='';
+    const colors=['#4ead72','#3a9e8a','#7aab8a','#c8a84b','#a3c4a8'];
+    for(let i=0;i<70;i++){
+      const el=document.createElement('div');
+      el.className='confetti-piece';
+      const c=colors[Math.floor(Math.random()*colors.length)];
+      const size=5+Math.random()*9;
+      el.style.cssText=
+        'left:'+Math.random()*100+'vw;'+
+        'background:'+c+';'+
+        'border-radius:'+(Math.random()>.5?'50%':'2px')+';'+
+        'width:'+size+'px;height:'+size+'px;'+
+        'animation-duration:'+(1.8+Math.random()*2.2)+'s;'+
+        'animation-delay:'+(Math.random()*.8)+'s;opacity:0.85;';
+      wrap.appendChild(el);
+    }
+    setTimeout(()=>{ wrap.innerHTML=''; },5000);
+  }
+
+  /* ---- Settings ---- */
+  function saveSettings(){
+    cfg.total      = parseInt(document.getElementById('sTotal').value)||345;
+    cfg.onlineMax  = parseFloat(document.getElementById('sOnline').value)||41;
+    cfg.praesenzMin= parseFloat(document.getElementById('sPraesenz').value)||51;
+    localStorage.setItem('schulCfg5', JSON.stringify(cfg));
+    render();
+  }
+
+  /* ---- Book today ---- */
+  function bookToday(type){
+    entries[todayStr()]=type;
+    localStorage.setItem('schulEntries5', JSON.stringify(entries));
+    const msgs={online:'🏠 Online eingetragen',praesenz:'🏫 Präsenz eingetragen',urlaub:'🏖️ Urlaubstag — Genieß die Freiheit!'};
+    toast(msgs[type]);
+    render();
+    if(emailCfg.autoMail) sendMail(type);
+  }
+
+  /* ---- Calendar click ---- */
+  function toggleDay(d){
+    if(d>todayStr()) return;
+    const cur=entries[d];
+    if(!cur)              entries[d]='online';
+    else if(cur==='online')   entries[d]='praesenz';
+    else if(cur==='praesenz') entries[d]='urlaub';
+    else                  delete entries[d];
+    localStorage.setItem('schulEntries5', JSON.stringify(entries));
+    render();
+  }
+
+  function deleteEntry(d){ delete entries[d]; localStorage.setItem('schulEntries5',JSON.stringify(entries)); render(); }
+  function prevMonth(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+  function nextMonth(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+
+  function toggleHistory(){
+    histOpen=!histOpen;
+    document.getElementById('historyList').style.display=histOpen?'block':'none';
+    document.getElementById('histToggle').textContent=histOpen?'ausblenden':'anzeigen';
+  }
+
+  function toast(msg){
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),2800);
+  }
+
+  /* ---- Render Calendar ---- */
+  function renderCalendar(){
+    const months=['JANUAR','FEBRUAR','MÄRZ','APRIL','MAI','JUNI','JULI','AUGUST','SEPTEMBER','OKTOBER','NOVEMBER','DEZEMBER'];
+    document.getElementById('calTitle').textContent=months[calMonth]+' '+calYear;
+    const grid=document.getElementById('calGrid');
+    grid.innerHTML='';
+    const today=todayStr();
+    const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+    const weekdays=[];
+    for(let d=1;d<=daysInMonth;d++){
+      const dt=new Date(calYear,calMonth,d);
+      const dow=dt.getDay();
+      if(dow===0||dow===6) continue;
+      weekdays.push({d,dow});
+    }
+    const leading=weekdays.length>0?weekdays[0].dow-1:0;
+    for(let i=0;i<leading;i++){
+      const el=document.createElement('div');
+      el.className='cal-day empty'; grid.appendChild(el);
+    }
+    weekdays.forEach(({d})=>{
+      const ds=calYear+'-'+pad(calMonth+1)+'-'+pad(d);
+      const entry=entries[ds];
+      const isToday=ds===today;
+      const isFuture=ds>today;
+      const el=document.createElement('div');
+      let cls='cal-day';
+      if(entry) cls+=' '+entry;
+      if(isToday) cls+=' today';
+      if(isFuture) cls+=' future';
+      el.className=cls;
+      const icons={online:'🏠',praesenz:'🏫',urlaub:'🏖️'};
+      el.innerHTML='<span class="cal-day-num">'+d+'</span><span class="cal-day-icon">'+(entry?icons[entry]:'')+'</span>';
+      if(!isFuture){ el.title='leer → online → präsenz → urlaub → leer'; el.onclick=()=>toggleDay(ds); }
+      grid.appendChild(el);
+    });
+  }
+
+  /* ---- Main Render ---- */
+  function render(){
+    document.getElementById('sTotal').value    = cfg.total;
+    document.getElementById('sOnline').value   = cfg.onlineMax;
+    document.getElementById('sPraesenz').value = cfg.praesenzMin;
+
+    const total      = cfg.total;
+    const maxOnline  = Math.round(total * cfg.onlineMax   / 100);
+    const minPraesenz= Math.round(total * cfg.praesenzMin / 100);
+
+    document.getElementById('calcPreview').textContent=
+      '// '+total+' × '+cfg.onlineMax+'% = '+(total*cfg.onlineMax/100).toFixed(2)+
+      ' → '+maxOnline+' Online-Tage\n'+
+      '// '+total+' × '+cfg.praesenzMin+'% = '+(total*cfg.praesenzMin/100).toFixed(2)+
+      ' → '+minPraesenz+' Präsenz-Tage';
+
+    const allDates   = Object.keys(entries).sort();
+    const onlineDays = allDates.filter(d=>entries[d]==='online').length;
+    const praesenzDays=allDates.filter(d=>entries[d]==='praesenz').length;
+    const urlaubDays = allDates.filter(d=>entries[d]==='urlaub').length;
+    const totalUsed  = allDates.length;
+    const onlineLeft = Math.max(0, maxOnline-onlineDays);
+    const praesenzLeft=Math.max(0, minPraesenz-praesenzDays);
+
+    const onlinePct  =(onlineDays/total*100).toFixed(1);
+    const praesenzPct=(praesenzDays/total*100).toFixed(1);
+    const freePct    =Math.max(0,100-parseFloat(onlinePct)-parseFloat(praesenzPct)).toFixed(1);
+
+    document.getElementById('headerSub').textContent=
+      '// '+totalUsed+' von '+total+' Tagen erfasst — '+fmt(todayStr());
+
+    /* Ticker */
+    const ticker=document.getElementById('ticker');
+    const tickerText=document.getElementById('tickerText');
+    ticker.className='ticker';
+    if(onlineDays>maxOnline){
+      ticker.classList.add('danger');
+      tickerText.textContent='⚠ ONLINE-LIMIT ÜBERSCHRITTEN — '+(onlineDays-maxOnline)+' TAGE ZU VIEL';
+    } else if(onlineDays>maxOnline*0.85){
+      ticker.classList.add('warn');
+      tickerText.textContent='ACHTUNG — NUR NOCH '+onlineLeft+' ONLINE-TAGE VERFÜGBAR';
+    } else if(urlaubDays>0&&praesenzLeft===0){
+      ticker.classList.add('urlaub');
+      tickerText.textContent='🏖️ '+urlaubDays+' URLAUBSTAG'+(urlaubDays>1?'E':'')+' — QUOTA ERFÜLLT';
+    } else if(praesenzLeft>0){
+      ticker.classList.add('neutral');
+      tickerText.textContent='AKTIV — NOCH '+praesenzLeft+' PRÄSENZ-TAGE BIS ZUM MINIMUM';
+    } else {
+      ticker.classList.add('good');
+      tickerText.textContent='✓ PRÄSENZ-MINDESTQUOTE ERFÜLLT — ALLES OK';
+    }
+
+    document.getElementById('onlineNum').textContent=onlineDays;
+    document.getElementById('praesenzNum').textContent=praesenzDays;
+    document.getElementById('onlineMax').textContent=maxOnline;
+    document.getElementById('praesenzMin').textContent=minPraesenz;
+
+    document.getElementById('segOnline').style.width=onlinePct+'%';
+    document.getElementById('segPraesenz').style.width=praesenzPct+'%';
+    document.getElementById('barLabelOnline').textContent='ONLINE '+onlinePct+'%';
+    document.getElementById('barLabelPraesenz').textContent='PRÄSENZ '+praesenzPct+'%';
+    document.getElementById('barLabelFree').textContent='OFFEN '+freePct+'%';
+
+    document.getElementById('miniOnlineLeft').textContent=onlineLeft;
+    document.getElementById('miniPraesenzLeft').textContent=praesenzLeft;
+    document.getElementById('miniUrlaub').textContent=urlaubDays;
+    document.getElementById('miniTotal').textContent=totalUsed;
+
+    const today=todayStr();
+    const te=entries[today];
+    document.getElementById('todayDateLabel').textContent=fmt(today);
+    document.getElementById('btnOnline').classList.toggle('active',te==='online');
+    document.getElementById('btnPraesenz').classList.toggle('active',te==='praesenz');
+    document.getElementById('btnUrlaub').classList.toggle('active',te==='urlaub');
+
+    renderCalendar();
+
+    /* Verlauf */
+    const sorted=[...allDates].reverse();
+    const histEl=document.getElementById('historyList');
+    const icons={online:'🏠 ONLINE',praesenz:'🏫 PRÄSENZ',urlaub:'🏖️ URLAUB'};
+    histEl.innerHTML=sorted.length===0
+      ? '<div class="empty">// noch keine einträge vorhanden</div>'
+      : sorted.map(d=>
+          '<div class="history-item">'+
+            '<span class="h-date">'+fmt(d)+'</span>'+
+            '<span class="h-type '+entries[d]+'">'+icons[entries[d]]+'</span>'+
+            '<button class="btn-del" onclick="deleteEntry(\''+d+'\')">löschen</button>'+
+          '</div>'
+        ).join('');
+  }
+
+
+  /* ---- Email ---- */
+  let emailCfg = JSON.parse(localStorage.getItem('schulEmailCfg') || '{"to":"","name":"","recipient":"","provider":"mailto"}');
+  let currentProvider = emailCfg.provider || 'mailto';
+
+  function saveEmailCfg(){
+    emailCfg.to        = document.getElementById('emailTo').value;
+    emailCfg.name      = document.getElementById('emailName').value;
+    emailCfg.recipient = document.getElementById('emailRecipient').value;
+    emailCfg.provider  = currentProvider;
+    localStorage.setItem('schulEmailCfg', JSON.stringify(emailCfg));
+  }
+
+  function setProvider(p){
+    currentProvider = p;
+    ['mailto','gmail','outlook','yahoo','gmx','web'].forEach(id => {
+      const el = document.getElementById('p' + id.charAt(0).toUpperCase() + id.slice(1));
+      if(el) el.classList.toggle('active', id === p);
+    });
+    saveEmailCfg();
+  }
+
+  function initEmailInputs(){
+    document.getElementById('emailTo').value        = emailCfg.to        || '';
+    document.getElementById('emailName').value      = emailCfg.name      || '';
+    document.getElementById('emailRecipient').value = emailCfg.recipient || '';
+    setProvider(currentProvider);
+    updateAutoMailToggle();
+  }
+
+  function toggleAutoMail(){
+    emailCfg.autoMail = !emailCfg.autoMail;
+    localStorage.setItem('schulEmailCfg', JSON.stringify(emailCfg));
+    updateAutoMailToggle();
+    toast(emailCfg.autoMail ? '✅ Auto-Mail aktiviert' : '🔕 Auto-Mail deaktiviert');
+  }
+
+  function updateAutoMailToggle(){
+    const el = document.getElementById('autoMailToggle');
+    if(el) el.classList.toggle('on', !!emailCfg.autoMail);
+  }
+
+  // 4 Textvarianten pro Typ — werden zufällig gewählt
+  const mailVariants = (r) => ({
+    online: [
+      (d) => `Guten Morgen ${r},\n\nich hoffe Ihnen geht es gut.\n\nHiermit möchte ich Sie darüber informieren, dass ich heute am ${d} am Unterricht online teilnehmen werde.`,
+      (d) => `Guten Morgen ${r},\n\nich wollte Ihnen kurz mitteilen, dass ich am heutigen Tag (${d}) per Online-Zuschaltung am Unterricht teilnehmen werde.`,
+      (d) => `Sehr geehrte/r ${r},\n\nhiermit informiere ich Sie, dass ich am ${d} aus dem Homeoffice online am Unterricht teilnehmen werde. Ich freue mich auf die heutige Einheit.`,
+      (d) => `Guten Morgen ${r},\n\nwie bereits bekannt nehme ich heute am ${d} online am Unterricht teil. Ich stehe selbstverständlich wie gewohnt zur Verfügung.`,
+    ],
+    praesenz: [
+      (d) => `Guten Morgen ${r},\n\nich hoffe Ihnen geht es gut.\n\nHiermit bestätige ich, dass ich heute am ${d} persönlich vor Ort am Unterricht teilnehmen werde.`,
+      (d) => `Guten Morgen ${r},\n\nkurze Rückmeldung: Ich werde heute am ${d} wie gewohnt vor Ort im Unterricht anwesend sein.`,
+      (d) => `Sehr geehrte/r ${r},\n\nhiermit bestätige ich meine persönliche Anwesenheit am Unterricht am ${d}. Ich freue mich auf den heutigen Tag.`,
+      (d) => `Guten Morgen ${r},\n\nich wollte kurz bestätigen, dass ich am ${d} in Präsenz am Unterricht teilnehmen werde und pünktlich vor Ort sein werde.`,
+    ],
+    urlaub: [
+      (d) => `Guten Morgen ${r},\n\nich hoffe Ihnen geht es gut.\n\nHiermit möchte ich Sie darüber informieren, dass ich heute am ${d} leider nicht am Unterricht teilnehmen kann.`,
+      (d) => `Guten Morgen ${r},\n\nleider muss ich Ihnen mitteilen, dass ich am heutigen Tag (${d}) aufgrund meines Urlaubs nicht am Unterricht teilnehmen kann. Ich werde den verpassten Stoff so schnell wie möglich nachholen.`,
+      (d) => `Sehr geehrte/r ${r},\n\nhiermit melde ich mich für den ${d} ab. Ich befinde mich im Urlaub und werde daher nicht am Unterricht teilnehmen können. Für etwaige Unterlagen stehe ich nach meiner Rückkehr gerne zur Verfügung.`,
+      (d) => `Guten Morgen ${r},\n\nbitte nehmen Sie zur Kenntnis, dass ich heute am ${d} urlaubsbedingt abwesend bin und somit nicht am Unterricht teilnehmen kann. Ich danke für Ihr Verständnis.`,
+    ],
+  });
+
+  function sendMail(type){
+    const to        = document.getElementById('emailTo').value.trim();
+    const name      = document.getElementById('emailName').value.trim();
+    const recipient = document.getElementById('emailRecipient').value.trim() || 'Frau/Herr [Name]';
+    const dateStr   = fmt(todayStr());
+    const sign      = '\n\nMit freundlichen Grüßen\n' + (name || '[Dein Name]');
+
+    const variants = mailVariants(recipient)[type];
+    const randomIdx = Math.floor(Math.random() * variants.length);
+    const bodyText  = variants[randomIdx](dateStr) + sign;
+
+    const subjects = {
+      online:   'Online-Teilnahme am ' + dateStr,
+      praesenz: 'Präsenz-Bestätigung am ' + dateStr,
+      urlaub:   'Abwesenheit am ' + dateStr,
+    };
+    const subject = subjects[type];
+
+    const subjectEnc = encodeURIComponent(subject);
+    const body       = encodeURIComponent(bodyText);
+    const toEnc      = encodeURIComponent(to);
+
+    let url;
+    switch(currentProvider){
+      case 'gmail':
+        url = 'https://mail.google.com/mail/?view=cm&to=' + toEnc + '&su=' + subjectEnc + '&body=' + body;
+        window.open(url, '_blank');
+        break;
+      case 'outlook':
+        url = 'https://outlook.live.com/mail/0/deeplink/compose?to=' + toEnc + '&subject=' + subjectEnc + '&body=' + body;
+        window.open(url, '_blank');
+        break;
+      case 'yahoo':
+        url = 'https://compose.mail.yahoo.com/?to=' + toEnc + '&subject=' + subjectEnc + '&body=' + body;
+        window.open(url, '_blank');
+        break;
+      case 'gmx':
+        url = 'https://www.gmx.net/mail/compose?to=' + toEnc + '&subject=' + subjectEnc;
+        window.open(url, '_blank');
+        toast('📋 GMX geöffnet — Text bitte manuell einfügen');
+        break;
+      case 'web':
+        url = 'https://web.de/email/compose?to=' + toEnc + '&subject=' + subjectEnc;
+        window.open(url, '_blank');
+        toast('📋 Web.de geöffnet — Text bitte manuell einfügen');
+        break;
+      default:
+        url = 'mailto:' + toEnc + '?subject=' + subjectEnc + '&body=' + body;
+        window.location.href = url;
+    }
+  }
+
+  initEmailInputs();
+  render();
+</script>
+</body>
+</html>
