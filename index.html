@@ -253,7 +253,22 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     <div id="loginForm">
       <div class="auth-field"><label>E-Mail</label><input type="email" id="loginEmail" placeholder="deine@email.de" autocomplete="email"></div>
       <div class="auth-field"><label>Passwort</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;color:var(--muted);">
+          <input type="checkbox" id="rememberMe" style="accent-color:var(--green);width:14px;height:14px;cursor:pointer;">
+          ANGEMELDET BLEIBEN
+        </label>
+        <button onclick="showForgotPassword()" style="background:none;border:none;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;text-decoration:underline;padding:0;transition:color 0.15s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">PASSWORT VERGESSEN?</button>
+      </div>
       <button class="auth-btn" onclick="login()">ANMELDEN</button>
+    </div>
+
+    <!-- PASSWORT VERGESSEN -->
+    <div id="forgotForm" style="display:none;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">// Gib deine E-Mail ein. Du erhältst einen Link zum Zurücksetzen.</div>
+      <div class="auth-field"><label>E-Mail</label><input type="email" id="forgotEmail" placeholder="deine@email.de" autocomplete="email"></div>
+      <button class="auth-btn" onclick="sendPasswordReset()">LINK SENDEN</button>
+      <button onclick="showForgotPassword()" style="width:100%;background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem;letter-spacing:0.08em;padding:10px;cursor:pointer;margin-top:8px;transition:all 0.15s;">← ZURÜCK ZUM LOGIN</button>
     </div>
     <div id="registerForm" style="display:none;">
       <div class="auth-field"><label>E-Mail</label><input type="email" id="regEmail" placeholder="deine@email.de" autocomplete="email"></div>
@@ -415,6 +430,23 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <div class="calc-preview" id="calcPreview"></div>
     </div>
 
+    <!-- PASSWORT ÄNDERN -->
+    <div class="section-label">Konto</div>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:18px;margin-bottom:28px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="fg">
+          <label>Neues Passwort</label>
+          <input type="password" id="newPass" placeholder="min. 6 Zeichen" autocomplete="new-password">
+        </div>
+        <div class="fg">
+          <label>Passwort bestätigen</label>
+          <input type="password" id="newPassConfirm" placeholder="wiederholen" autocomplete="new-password">
+        </div>
+        <button onclick="changePassword()" style="background:var(--green-dim);border:1px solid var(--green);color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.1em;padding:10px 20px;cursor:pointer;white-space:nowrap;transition:all 0.15s;-webkit-appearance:none;">SPEICHERN</button>
+      </div>
+      <div id="passMsg" style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;margin-top:8px;min-height:16px;"></div>
+    </div>
+
     <!-- VERLAUF -->
     <div class="section-label" style="margin-bottom:8px;">Verlauf<button class="history-toggle" onclick="toggleHistory()" id="histToggle" style="margin-left:auto;">anzeigen</button></div>
     <div class="history-list" id="historyList"></div>
@@ -428,7 +460,34 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 const SUPA_URL = 'https://sntkvqzfiyhtvtufqfgp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNudGt2cXpmaXlodHZ0dWZxZmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNDQ5MjcsImV4cCI6MjA5MjcyMDkyN30.viXudtCbUkzLEmdsXqAGYFwlxNB-JiHNp11g0t1XHc0';
 const { createClient } = supabase;
-const sb = createClient(SUPA_URL, SUPA_KEY);
+// ── SUPABASE CLIENT ──
+// Wir initialisieren den Client ohne persistenten Storage
+// und steuern das selbst je nach "Angemeldet bleiben"
+const sb = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'schultracker_session',
+    storage: {
+      getItem: (key) => {
+        // Zuerst localStorage (angemeldet bleiben), dann sessionStorage (nur Browser-Session)
+        return localStorage.getItem(key) || sessionStorage.getItem(key);
+      },
+      setItem: (key, value) => {
+        const remember = localStorage.getItem('schultracker_remember') === 'true';
+        if(remember){
+          localStorage.setItem(key, value);
+        } else {
+          sessionStorage.setItem(key, value);
+          localStorage.removeItem(key); // sicherheitshalber entfernen
+        }
+      },
+      removeItem: (key) => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      }
+    }
+  }
+});
 
 // State
 let entries = {};
@@ -466,18 +525,51 @@ sb.auth.onAuthStateChange(async (event, session) => {
 function switchTab(tab){
   document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
   document.getElementById('registerForm').style.display = tab==='register' ? '' : 'none';
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-  document.getElementById('authErr').textContent = '';
+  document.getElementById('forgotForm').style.display   = 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('authErr').textContent='';
+}
+
+function showForgotPassword(){
+  const forgotVisible = document.getElementById('forgotForm').style.display !== 'none';
+  document.getElementById('loginForm').style.display    = forgotVisible ? '' : 'none';
+  document.getElementById('forgotForm').style.display   = forgotVisible ? 'none' : '';
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('authErr').textContent        = '';
+}
+
+async function sendPasswordReset(){
+  const email = document.getElementById('forgotEmail').value.trim();
+  const btn   = document.querySelector('#forgotForm .auth-btn');
+  if(!email){ document.getElementById('authErr').textContent='⚠ Bitte E-Mail eingeben.'; return; }
+  btn.disabled=true; btn.textContent='SENDE...';
+  const {error} = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+  btn.disabled=false; btn.textContent='LINK SENDEN';
+  if(error){
+    document.getElementById('authErr').textContent='⚠ '+error.message;
+  } else {
+    document.getElementById('authErr').innerHTML='<span class="auth-ok">✓ E-Mail gesendet! Prüfe deinen Posteingang.</span>';
+  }
 }
 
 async function login(){
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value;
-  const btn   = document.querySelector('#loginForm .auth-btn');
-  btn.disabled = true; btn.textContent = 'BITTE WARTEN...';
+  const email    = document.getElementById('loginEmail').value.trim();
+  const pass     = document.getElementById('loginPass').value;
+  const remember = document.getElementById('rememberMe').checked;
+  const btn      = document.querySelector('#loginForm .auth-btn');
+  btn.disabled=true; btn.textContent='BITTE WARTEN...';
+
+  // Remember-Flag VOR dem Login setzen, damit storage.setItem es korrekt verwendet
+  localStorage.setItem('schultracker_remember', remember ? 'true' : 'false');
+
   const {error} = await sb.auth.signInWithPassword({email, password:pass});
-  btn.disabled = false; btn.textContent = 'ANMELDEN';
-  if(error) document.getElementById('authErr').textContent = '⚠ ' + error.message;
+  btn.disabled=false; btn.textContent='ANMELDEN';
+  if(error){
+    document.getElementById('authErr').textContent='⚠ '+error.message;
+    localStorage.removeItem('schultracker_remember');
+  }
 }
 
 async function register(){
@@ -846,6 +938,37 @@ function openEgg(){
   setTimeout(function(){wrap.innerHTML='';},5000);
 }
 function closeEgg(){document.getElementById('eggOverlay').classList.remove('show');}
+
+// ── PASSWORT ÄNDERN ──
+async function changePassword(){
+  const newPass    = document.getElementById('newPass').value;
+  const newConfirm = document.getElementById('newPassConfirm').value;
+  const msg        = document.getElementById('passMsg');
+
+  if(newPass.length < 6){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '⚠ Passwort muss mindestens 6 Zeichen lang sein.';
+    return;
+  }
+  if(newPass !== newConfirm){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '⚠ Passwörter stimmen nicht überein.';
+    return;
+  }
+
+  const {error} = await sb.auth.updateUser({password: newPass});
+  if(error){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '⚠ ' + error.message;
+  } else {
+    msg.style.color = 'var(--green)';
+    msg.textContent = '✓ Passwort erfolgreich geändert!';
+    document.getElementById('newPass').value = '';
+    document.getElementById('newPassConfirm').value = '';
+    toast('🔐 Passwort geändert!');
+    setTimeout(()=>{ msg.textContent=''; }, 4000);
+  }
+}
 
 // ── TOAST ──
 function toast(msg){
