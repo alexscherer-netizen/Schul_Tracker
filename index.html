@@ -506,32 +506,57 @@ const { createClient } = supabase;
 // ── SUPABASE CLIENT ──
 // Wir initialisieren den Client ohne persistenten Storage
 // und steuern das selbst je nach "Angemeldet bleiben"
-// Cookie-basierter Storage für Edge Tracking Prevention Fix
-const cookieStorage = {
-  getItem: (key) => {
-    const match = document.cookie.match(new RegExp('(^| )' + encodeURIComponent(key) + '=([^;]+)'));
-    if(!match) return null;
-    try { return decodeURIComponent(match[2]); } catch(e) { return null; }
-  },
-  setItem: (key, value) => {
-    const days = 30;
-    const expires = new Date(Date.now() + days*864e5).toUTCString();
-    document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
-  },
-  removeItem: (key) => {
-    document.cookie = encodeURIComponent(key) + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-  }
-};
-
+// Supabase client - Session in sessionStorage (Edge-kompatibel)
 const sb = createClient(SUPA_URL, SUPA_KEY, {
   auth: {
     persistSession: true,
-    storageKey: 'sb-schultracker-auth',
-    storage: cookieStorage,
+    storageKey: 'sb-schultracker',
+    storage: window.sessionStorage,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
   }
 });
+
+// Manuelle Session-Persistenz über localStorage (Edge-sicher)
+const SESSION_KEY = 'schultracker_manual_session';
+
+function saveSessionManually(session) {
+  if(!session) return;
+  const remember = localStorage.getItem('schultracker_remember') === 'true';
+  const data = { access_token: session.access_token, refresh_token: session.refresh_token, expires_at: session.expires_at };
+  if(remember) {
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
+  }
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function clearSavedSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+}
+
+async function restoreSession() {
+  let raw = null;
+  try { raw = sessionStorage.getItem(SESSION_KEY); } catch(e) {}
+  if(!raw) {
+    try { raw = localStorage.getItem(SESSION_KEY); } catch(e) {}
+  }
+  if(!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    if(!data.access_token || !data.refresh_token) return false;
+    const { data: session, error } = await sb.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token
+    });
+    if(error || !session.session) {
+      clearSavedSession();
+      return false;
+    }
+    saveSessionManually(session.session);
+    return true;
+  } catch(e) { return false; }
+}
 
 initTheme();
 
@@ -583,24 +608,25 @@ function showAuth() {
 }
 
 sb.auth.onAuthStateChange(async (event, session) => {
-  console.log('authStateChange:', event, session ? session.user.email : 'no session');
   if(session && session.user){
+    saveSessionManually(session);
     if(!currentUser || currentUser.id !== session.user.id){
       await showApp(session.user);
     }
-  } else {
+  } else if(event === 'SIGNED_OUT'){
     showAuth();
   }
 });
 
-// Fallback: nach 3s prüfen ob noch Loading-Screen
-setTimeout(async () => {
-  if(document.getElementById('loading').style.display !== 'none'){
-    const {data:{session}} = await sb.auth.getSession();
-    if(session) await showApp(session.user);
-    else showAuth();
+// Beim Start: erst manuelle Session wiederherstellen
+(async () => {
+  const restored = await restoreSession();
+  if(!restored){
+    // Kein gespeicherter Token - zeige Auth
+    showAuth();
   }
-}, 3000);
+  // showApp wird durch onAuthStateChange getriggert wenn restoreSession erfolgreich
+})();
 
 function switchTab(tab){
   document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
@@ -640,11 +666,14 @@ async function login(){
   const remember = document.getElementById('rememberMe').checked;
   const btn      = document.querySelector('#loginForm .auth-btn');
   btn.disabled=true; btn.textContent='BITTE WARTEN...';
-  // Speichere Präferenz: bei Logout ohne "remember" wird Session gelöscht
-  localStorage.setItem('schultracker_remember', remember ? 'true' : 'false');
-  const {error} = await sb.auth.signInWithPassword({email, password:pass});
+  try { localStorage.setItem('schultracker_remember', remember ? 'true' : 'false'); } catch(e) {}
+  const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
   btn.disabled=false; btn.textContent='ANMELDEN';
-  if(error) document.getElementById('authErr').textContent='⚠ '+error.message;
+  if(error){
+    document.getElementById('authErr').textContent='⚠ '+error.message;
+  } else {
+    saveSessionManually(data.session);
+  }
 }
 
 async function register(){
@@ -660,11 +689,9 @@ async function register(){
 
 async function logout(){
   await sb.auth.signOut();
-  // Wenn nicht "angemeldet bleiben" - Session komplett löschen
-  if(localStorage.getItem('schultracker_remember') !== 'true'){
-    localStorage.removeItem('schultracker_session');
-  }
+  clearSavedSession();
   entries = {}; cfg = {total:345,onlineMax:49,praesenzMin:51,bundesland:''};
+  emailCfg = {to:'',name:'',recipient:'',provider:'mailto',autoMail:false};
 }
 
 // ── DATA LOAD / SAVE ──
