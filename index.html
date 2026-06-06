@@ -520,21 +520,55 @@ function fmt(s){ if(!s) return ''; const [y,m,d]=s.split('-'); return d+'.'+m+'.
 function pad(n){ return n<10?'0'+n:''+n; }
 
 // ── SUPABASE AUTH ──
-sb.auth.onAuthStateChange(async (event, session) => {
+async function showApp(user) {
+  currentUser = user;
   document.getElementById('loading').style.display = 'none';
-  if(session){
-    currentUser = session.user;
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('topbarUser').textContent = currentUser.email;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbarUser').textContent = user.email;
+  try {
     await loadData();
-    render();
+  } catch(e) {
+    console.error('loadData error:', e);
+  }
+  document.getElementById('sTotal').value         = cfg.total;
+  document.getElementById('sOnline').value        = cfg.onlineMax;
+  document.getElementById('sPraesenz').value      = cfg.praesenzMin;
+  document.getElementById('emailTo').value        = emailCfg.to;
+  document.getElementById('emailName').value      = emailCfg.name;
+  document.getElementById('emailRecipient').value = emailCfg.recipient;
+  currentProvider = emailCfg.provider;
+  renderProviderButtons();
+  updateAutoMailToggle();
+  render();
+}
+
+function showAuth() {
+  currentUser = null;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  console.log('authStateChange:', event, session ? session.user.email : 'no session');
+  if(session && session.user){
+    if(!currentUser || currentUser.id !== session.user.id){
+      await showApp(session.user);
+    }
   } else {
-    currentUser = null;
-    document.getElementById('authScreen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
+    showAuth();
   }
 });
+
+// Fallback: nach 3s prüfen ob noch Loading-Screen
+setTimeout(async () => {
+  if(document.getElementById('loading').style.display !== 'none'){
+    const {data:{session}} = await sb.auth.getSession();
+    if(session) await showApp(session.user);
+    else showAuth();
+  }
+}, 3000);
 
 function switchTab(tab){
   document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
@@ -606,38 +640,24 @@ async function loadData(){
   if(!currentUser) return;
 
   // Load entries
-  const {data:entData} = await sb.from('schultracker_entries').select('date,type').eq('user_id', currentUser.id);
+  const {data:entData, error:entErr} = await sb.from('schultracker_entries').select('date,type').eq('user_id', currentUser.id);
   entries = {};
   if(entData) entData.forEach(e => entries[e.date] = e.type);
 
   // Load config
-  const {data:cfgData} = await sb.from('schultracker_config').select('*').eq('user_id', currentUser.id).single();
+  const {data:cfgData, error:cfgErr} = await sb.from('schultracker_config').select('*').eq('user_id', currentUser.id).maybeSingle();
   if(cfgData){
-    cfg = {
-      total:       cfgData.total       || 345,
-      onlineMax:   cfgData.online_max  || 49,
-      praesenzMin: cfgData.praesenz_min|| 51,
-      bundesland:  cfgData.bundesland  || '',
-    };
-    emailCfg = {
-      to:        cfgData.email_to        || '',
-      name:      cfgData.email_name      || '',
-      recipient: cfgData.email_recipient || '',
-      provider:  cfgData.email_provider  || 'mailto',
-      autoMail:  cfgData.auto_mail       || false,
-    };
-    currentProvider = emailCfg.provider;
+    cfg.total       = cfgData.total        || 345;
+    cfg.onlineMax   = cfgData.online_max   || 49;
+    cfg.praesenzMin = cfgData.praesenz_min || 51;
+    cfg.bundesland  = cfgData.bundesland   || '';
+    emailCfg.to        = cfgData.email_to        || '';
+    emailCfg.name      = cfgData.email_name      || '';
+    emailCfg.recipient = cfgData.email_recipient || '';
+    emailCfg.provider  = cfgData.email_provider  || 'mailto';
+    emailCfg.autoMail  = cfgData.auto_mail       || false;
+    currentProvider    = emailCfg.provider;
   }
-
-  // Sync inputs
-  document.getElementById('sTotal').value    = cfg.total;
-  document.getElementById('sOnline').value   = cfg.onlineMax;
-  document.getElementById('sPraesenz').value = cfg.praesenzMin;
-  document.getElementById('emailTo').value        = emailCfg.to;
-  document.getElementById('emailName').value      = emailCfg.name;
-  document.getElementById('emailRecipient').value = emailCfg.recipient;
-  renderProviderButtons();
-  updateAutoMailToggle();
 }
 
 async function saveEntry(date, type){
