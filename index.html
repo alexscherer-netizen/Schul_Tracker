@@ -553,8 +553,6 @@ async function showApp(user) {
   document.getElementById('app').style.display = 'block';
   document.getElementById('topbarUser').textContent = user.email;
   document.getElementById('tickerText').textContent = 'LADE DATEN...';
-  // Kurzer Delay damit Supabase Session vollständig initialisiert ist
-  await new Promise(r => setTimeout(r, 500));
   try { await loadData(); } catch(e) { console.error('loadData:', e); }
   document.getElementById('sTotal').value         = cfg.total;
   document.getElementById('sOnline').value        = cfg.onlineMax;
@@ -577,17 +575,20 @@ function showAuth() {
 
 // ── APP START ──
 // Einfachster möglicher Flow: onAuthStateChange ist die einzige Quelle der Wahrheit
-sb.auth.onAuthStateChange(async (event, session) => {
+sb.auth.onAuthStateChange((event, session) => {
   console.log('auth event:', event, session ? 'session ok' : 'no session');
 
   if(session && session.user) {
-    // session hier ist das direkte session-Objekt mit access_token/refresh_token
     saveSessionManually(session);
-    await showApp(session.user);
+    // WICHTIG: loadData NICHT direkt im Callback (Supabase Deadlock!)
+    // setTimeout springt aus dem Callback-Kontext heraus
+    setTimeout(() => { showApp(session.user); }, 0);
   } else {
     if(event === 'INITIAL_SESSION') {
-      const restored = await restoreSession();
-      if(!restored) showAuth();
+      setTimeout(async () => {
+        const restored = await restoreSession();
+        if(!restored) showAuth();
+      }, 0);
     } else if(event === 'SIGNED_OUT') {
       showAuth();
     }
