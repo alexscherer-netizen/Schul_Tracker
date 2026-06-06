@@ -513,9 +513,19 @@ const sb = createClient(SUPA_URL, SUPA_KEY);
 const SESSION_KEY = 'schultracker_manual_session';
 
 function saveSessionManually(session) {
-  if(!session || !session.refresh_token) return;
-  const data = { refresh_token: session.refresh_token, access_token: session.access_token };
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
+  // session kann direkt das session-Objekt sein oder {session: {...}}
+  const s = session && session.access_token ? session : (session && session.session ? session.session : null);
+  if(!s || !s.refresh_token) {
+    console.warn('saveSession: kein refresh_token', JSON.stringify(session).substring(0,100));
+    return;
+  }
+  const data = { refresh_token: s.refresh_token, access_token: s.access_token };
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    console.log('Session gespeichert ✓');
+  } catch(e) {
+    console.error('localStorage Fehler:', e);
+  }
 }
 
 function clearSavedSession() {
@@ -535,20 +545,47 @@ async function restoreSession() {
   } catch(e) { clearSavedSession(); return false; }
 }
 
+// ── APP SHOW/HIDE ──
+async function showApp(user) {
+  currentUser = user;
+  document.getElementById('loading').style.display  = 'none';
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbarUser').textContent = user.email;
+  document.getElementById('tickerText').textContent = 'LADE DATEN...';
+  try { await loadData(); } catch(e) { console.error('loadData:', e); }
+  document.getElementById('sTotal').value         = cfg.total;
+  document.getElementById('sOnline').value        = cfg.onlineMax;
+  document.getElementById('sPraesenz').value      = cfg.praesenzMin;
+  document.getElementById('emailTo').value        = emailCfg.to;
+  document.getElementById('emailName').value      = emailCfg.name;
+  document.getElementById('emailRecipient').value = emailCfg.recipient;
+  currentProvider = emailCfg.provider;
+  renderProviderButtons();
+  updateAutoMailToggle();
+  render();
+}
+
+function showAuth() {
+  currentUser = null;
+  document.getElementById('loading').style.display  = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
 // ── APP START ──
 // Einfachster möglicher Flow: onAuthStateChange ist die einzige Quelle der Wahrheit
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('auth event:', event, session ? 'session ok' : 'no session');
 
   if(session && session.user) {
+    // session hier ist das direkte session-Objekt mit access_token/refresh_token
     saveSessionManually(session);
     await showApp(session.user);
   } else {
-    // Kein aktiver Session -> versuche restore
     if(event === 'INITIAL_SESSION') {
       const restored = await restoreSession();
       if(!restored) showAuth();
-      // wenn restored: onAuthStateChange feuert nochmal mit neuer session
     } else if(event === 'SIGNED_OUT') {
       showAuth();
     }
