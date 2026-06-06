@@ -626,11 +626,8 @@ function showAuth() {
 let appStarted = false;
 
 async function startApp() {
-  if(appStarted) return;
-
   // 1. Versuche bestehende Session zu laden
   const { data: { session } } = await sb.auth.getSession();
-
   if(session && session.user) {
     appStarted = true;
     await showApp(session.user);
@@ -647,12 +644,10 @@ async function startApp() {
 
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('auth:', event);
-  if((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && session.user) {
+  if(session && session.user) {
     saveSessionManually(session);
-    if(!appStarted) {
-      appStarted = true;
-      await showApp(session.user);
-    }
+    // IMMER showApp aufrufen wenn Session vorhanden — egal ob schon gestartet
+    await showApp(session.user);
   } else if(event === 'SIGNED_OUT') {
     appStarted = false;
     showAuth();
