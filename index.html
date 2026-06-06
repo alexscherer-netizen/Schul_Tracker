@@ -732,13 +732,14 @@ async function logout(){
 async function loadData(){
   if(!currentUser) return;
 
-  // Load entries
-  const {data:entData, error:entErr} = await sb.from('schultracker_entries').select('date,type').eq('user_id', currentUser.id);
+  // RLS filtert automatisch nach auth.uid() - kein user_id Filter nötig
+  const {data:entData, error:entErr} = await sb.from('schultracker_entries').select('date,type');
+  console.log('entries response:', entData ? entData.length : 0, 'error:', entErr);
   entries = {};
   if(entData) entData.forEach(e => entries[e.date] = e.type);
 
-  // Load config
-  const {data:cfgData, error:cfgErr} = await sb.from('schultracker_config').select('*').eq('user_id', currentUser.id).maybeSingle();
+  const {data:cfgData, error:cfgErr} = await sb.from('schultracker_config').select('*').maybeSingle();
+  console.log('config response:', cfgData ? 'found' : 'null', 'error:', cfgErr);
   if(cfgData){
     cfg.total       = cfgData.total        || 345;
     cfg.onlineMax   = cfgData.online_max   || 49;
