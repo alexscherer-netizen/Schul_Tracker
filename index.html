@@ -429,7 +429,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
         <button class="email-btn email-btn-praesenz" onclick="sendMail('praesenz')"><span>🏫</span>Präsenz bestätigen</button>
         <button class="email-btn email-btn-urlaub" onclick="sendMail('urlaub')"><span>🏖️</span>Abwesenheit melden</button>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);margin-top:8px;">// Klick öffnet dein E-Mail-Programm mit vorausgefüllter Nachricht</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);margin-top:8px;">// "📱 Mail-App" öffnet die Mail-App deines Geräts — die anderen öffnen den Browser</div>
     </div>
 
     <!-- BUNDESLAND -->
@@ -861,7 +861,7 @@ async function setBundesland(k){
 
 // ── EMAIL ──
 const PROVIDERS=[
-  {k:'mailto',n:'📧 Standard'},{k:'gmail',n:'Gmail'},
+  {k:'mailto',n:'📱 Mail-App'},{k:'gmail',n:'Gmail'},
   {k:'outlook',n:'Outlook'},{k:'yahoo',n:'Yahoo'},
   {k:'gmx',n:'GMX'},{k:'web',n:'Web.de'},
 ];
@@ -939,7 +939,16 @@ function sendMail(type){
     case 'yahoo':    url='https://compose.mail.yahoo.com/?to='+toEnc+'&subject='+subjectEnc+'&body='+body; window.open(url,'_blank'); break;
     case 'gmx':      url='https://www.gmx.net/mail/compose?to='+toEnc+'&subject='+subjectEnc; window.open(url,'_blank'); toast('📋 GMX geöffnet'); break;
     case 'web':      url='https://web.de/email/compose?to='+toEnc+'&subject='+subjectEnc; window.open(url,'_blank'); toast('📋 Web.de geöffnet'); break;
-    default:         window.location.href='mailto:'+toEnc+'?subject='+subjectEnc+'&body='+body;
+    default:
+      // Mail-App des Geräts öffnen (zuverlässig über Anchor-Klick)
+      const mailtoUrl='mailto:'+toEnc+'?subject='+subjectEnc+'&body='+body;
+      const a=document.createElement('a');
+      a.href=mailtoUrl;
+      a.style.display='none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){document.body.removeChild(a);},100);
+      toast('📱 Mail-App wird geöffnet');
   }
 }
 
