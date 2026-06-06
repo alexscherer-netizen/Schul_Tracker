@@ -506,8 +506,16 @@ const { createClient } = supabase;
 // ── SUPABASE CLIENT ──
 // Wir initialisieren den Client ohne persistenten Storage
 // und steuern das selbst je nach "Angemeldet bleiben"
-// Standard Supabase client - speichert Session in localStorage
-const sb = createClient(SUPA_URL, SUPA_KEY);
+// Supabase client mit explizitem localStorage (Edge Tracking Prevention Fix)
+const sb = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'sb-sntkvqzfiyhtvtufqfgp-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+});
 
 initTheme();
 
