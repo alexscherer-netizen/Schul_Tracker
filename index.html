@@ -587,11 +587,20 @@ async function showApp(user) {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('topbarUser').textContent = user.email;
+
+  // Lade-Indikator im Ticker
+  document.getElementById('tickerText').textContent = 'LADE DATEN...';
+
   try {
     await loadData();
+    console.log('Daten geladen:', Object.keys(entries).length, 'Einträge');
   } catch(e) {
-    console.error('loadData error:', e);
+    console.error('loadData Fehler:', e);
   }
+
+  console.log('entries nach loadData:', JSON.stringify(entries).substring(0,200));
+  console.log('cfg:', JSON.stringify(cfg));
+
   document.getElementById('sTotal').value         = cfg.total;
   document.getElementById('sOnline').value        = cfg.onlineMax;
   document.getElementById('sPraesenz').value      = cfg.praesenzMin;
@@ -602,6 +611,8 @@ async function showApp(user) {
   renderProviderButtons();
   updateAutoMailToggle();
   render();
+
+  console.log('render() aufgerufen, entries:', Object.keys(entries).length);
 }
 
 function showAuth() {
