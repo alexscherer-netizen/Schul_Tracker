@@ -506,32 +506,16 @@ const { createClient } = supabase;
 // ── SUPABASE CLIENT ──
 // Wir initialisieren den Client ohne persistenten Storage
 // und steuern das selbst je nach "Angemeldet bleiben"
-// Supabase client - Session in sessionStorage (Edge-kompatibel)
-const sb = createClient(SUPA_URL, SUPA_KEY, {
-  auth: {
-    persistSession: true,
-    storageKey: 'sb-schultracker',
-    storage: window.sessionStorage,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-  }
-});
+// Supabase client
+const sb = createClient(SUPA_URL, SUPA_KEY);
 
-// Manuelle Session-Persistenz über localStorage (Edge-sicher)
+// ── SESSION MANAGEMENT ──
 const SESSION_KEY = 'schultracker_manual_session';
 
 function saveSessionManually(session) {
   if(!session || !session.refresh_token) return;
-  const data = {
-    refresh_token: session.refresh_token,
-    access_token:  session.access_token,
-    expires_at:    session.expires_at
-  };
-  // Immer in localStorage speichern (überlebt Reload)
-  // Edge-Warnung ist nur eine Warnung, kein Fehler
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {
-    console.warn('localStorage nicht verfügbar:', e);
-  }
+  const data = { refresh_token: session.refresh_token, access_token: session.access_token };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
 }
 
 function clearSavedSession() {
@@ -539,123 +523,37 @@ function clearSavedSession() {
 }
 
 async function restoreSession() {
-  // Nur aus localStorage lesen (bleibt nach Reload erhalten)
   let raw = null;
   try { raw = localStorage.getItem(SESSION_KEY); } catch(e) {}
   if(!raw) return false;
   try {
     const data = JSON.parse(raw);
     if(!data.refresh_token) return false;
-    // Refresh Token verwenden um neue Session zu holen
-    const { data: result, error } = await sb.auth.refreshSession({
-      refresh_token: data.refresh_token
-    });
-    if(error || !result.session) {
-      clearSavedSession();
-      return false;
-    }
-    saveSessionManually(result.session);
+    const { data: result, error } = await sb.auth.refreshSession({ refresh_token: data.refresh_token });
+    if(error || !result.session) { clearSavedSession(); return false; }
     return true;
-  } catch(e) {
-    clearSavedSession();
-    return false;
-  }
+  } catch(e) { clearSavedSession(); return false; }
 }
 
-initTheme();
-
-// State
-let entries = {};
-let cfg = {total:345,onlineMax:49,praesenzMin:51,bundesland:''};
-let emailCfg = {to:'',name:'',recipient:'',provider:'mailto',autoMail:false};
-let currentProvider = 'mailto';
-let histOpen = false;
-let eggClicks = 0, eggTimer = null;
-let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
-let currentUser = null;
-let saveTimeout = null;
-
-// Helpers
-function todayStr(){ return new Date().toISOString().split('T')[0]; }
-function fmt(s){ if(!s) return ''; const [y,m,d]=s.split('-'); return d+'.'+m+'.'+y; }
-function pad(n){ return n<10?'0'+n:''+n; }
-
-// ── SUPABASE AUTH ──
-async function showApp(user) {
-  currentUser = user;
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('topbarUser').textContent = user.email;
-
-  // Lade-Indikator im Ticker
-  document.getElementById('tickerText').textContent = 'LADE DATEN...';
-
-  try {
-    await loadData();
-    console.log('Daten geladen:', Object.keys(entries).length, 'Einträge');
-  } catch(e) {
-    console.error('loadData Fehler:', e);
-  }
-
-  console.log('entries nach loadData:', JSON.stringify(entries).substring(0,200));
-  console.log('cfg:', JSON.stringify(cfg));
-
-  document.getElementById('sTotal').value         = cfg.total;
-  document.getElementById('sOnline').value        = cfg.onlineMax;
-  document.getElementById('sPraesenz').value      = cfg.praesenzMin;
-  document.getElementById('emailTo').value        = emailCfg.to;
-  document.getElementById('emailName').value      = emailCfg.name;
-  document.getElementById('emailRecipient').value = emailCfg.recipient;
-  currentProvider = emailCfg.provider;
-  renderProviderButtons();
-  updateAutoMailToggle();
-  render();
-
-  console.log('render() aufgerufen, entries:', Object.keys(entries).length);
-}
-
-function showAuth() {
-  currentUser = null;
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-}
-
-// Einmaliger Start-Handler
-let appStarted = false;
-
-async function startApp() {
-  // 1. Versuche bestehende Session zu laden
-  const { data: { session } } = await sb.auth.getSession();
-  if(session && session.user) {
-    appStarted = true;
-    await showApp(session.user);
-    return;
-  }
-
-  // 2. Versuche gespeicherten Token wiederherzustellen
-  const restored = await restoreSession();
-  if(restored) return; // onAuthStateChange kümmert sich darum
-
-  // 3. Kein Login -> zeige Auth
-  showAuth();
-}
-
+// ── APP START ──
+// Einfachster möglicher Flow: onAuthStateChange ist die einzige Quelle der Wahrheit
 sb.auth.onAuthStateChange(async (event, session) => {
-  console.log('auth:', event);
+  console.log('auth event:', event, session ? 'session ok' : 'no session');
+
   if(session && session.user) {
     saveSessionManually(session);
-    // IMMER showApp aufrufen wenn Session vorhanden — egal ob schon gestartet
     await showApp(session.user);
-  } else if(event === 'SIGNED_OUT') {
-    appStarted = false;
-    showAuth();
+  } else {
+    // Kein aktiver Session -> versuche restore
+    if(event === 'INITIAL_SESSION') {
+      const restored = await restoreSession();
+      if(!restored) showAuth();
+      // wenn restored: onAuthStateChange feuert nochmal mit neuer session
+    } else if(event === 'SIGNED_OUT') {
+      showAuth();
+    }
   }
 });
-
-// Start
-startApp();
 
 function switchTab(tab){
   document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
@@ -690,19 +588,14 @@ async function sendPasswordReset(){
 }
 
 async function login(){
-  const email    = document.getElementById('loginEmail').value.trim();
-  const pass     = document.getElementById('loginPass').value;
-  const remember = document.getElementById('rememberMe').checked;
-  const btn      = document.querySelector('#loginForm .auth-btn');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.querySelector('#loginForm .auth-btn');
   btn.disabled=true; btn.textContent='BITTE WARTEN...';
-  try { localStorage.setItem('schultracker_remember', remember ? 'true' : 'false'); } catch(e) {}
-  const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
+  const {error} = await sb.auth.signInWithPassword({email, password:pass});
   btn.disabled=false; btn.textContent='ANMELDEN';
-  if(error){
-    document.getElementById('authErr').textContent='⚠ '+error.message;
-  } else {
-    saveSessionManually(data.session);
-  }
+  if(error) document.getElementById('authErr').textContent='⚠ '+error.message;
+  // onAuthStateChange kümmert sich um showApp und saveSession
 }
 
 async function register(){
@@ -717,8 +610,8 @@ async function register(){
 }
 
 async function logout(){
-  await sb.auth.signOut();
   clearSavedSession();
+  await sb.auth.signOut();
   entries = {}; cfg = {total:345,onlineMax:49,praesenzMin:51,bundesland:''};
   emailCfg = {to:'',name:'',recipient:'',provider:'mailto',autoMail:false};
 }
