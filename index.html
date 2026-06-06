@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Schul-Tracker</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNjaHVsLVRyYWNrZXIiLAogICJzaG9ydF9uYW1lIjogIlNjaHVsVHJhY2siLAogICJkZXNjcmlwdGlvbiI6ICJBbndlc2VuaGVpdHMtVHJhY2tlciBmw7xyIGRpZSBTY2h1bGUiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzA5MGUwYyIsCiAgInRoZW1lX2NvbG9yIjogIiM0ZWFkNzIiLAogICJpY29ucyI6IFsKICAgIHt7InNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFNWR19CNjQiLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLCAicHVycG9zZSI6ICJhbnkgbWFza2FibGUifX0KICBdCn0=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSI4MCIgZmlsbD0iIzA5MGUwYyIvPgogIDwhLS0gU3VidGxlIGdyaWQgbGluZXMgLS0+CiAgPGxpbmUgeDE9IjAiIHkxPSIxNzAiIHgyPSI1MTIiIHkyPSIxNzAiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjAiIHkxPSIzNDAiIHgyPSI1MTIiIHkyPSIzNDAiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjE3MCIgeTE9IjAiIHgyPSIxNzAiIHkyPSI1MTIiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjM0MCIgeTE9IjAiIHgyPSIzNDAiIHkyPSI1MTIiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPCEtLSBTVCBsZXR0ZXJzIChTY2h1bFRyYWNrZXIpIC0tPgogIDx0ZXh0IHg9IjI1NiIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iMTYwIiBmaWxsPSIjNGVhZDcyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBsZXR0ZXItc3BhY2luZz0iLTgiPlNUPC90ZXh0PgogIDwhLS0gR3JlZW4gYWNjZW50IGJhciAtLT4KICA8cmVjdCB4PSI4MCIgeT0iMzEwIiB3aWR0aD0iMzUyIiBoZWlnaHQ9IjYiIHJ4PSIzIiBmaWxsPSIjNGVhZDcyIiBvcGFjaXR5PSIwLjgiLz4KICA8IS0tIFRocmVlIGNvbG9yZWQgZG90czogT25saW5lLCBQcsOkc2VueiwgVXJsYXViIC0tPgogIDxjaXJjbGUgY3g9IjE3NiIgY3k9IjM4MCIgcj0iMjIiIGZpbGw9IiMyMmM1NWUiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIzODAiIHI9IjIyIiBmaWxsPSIjM2I4MmY2Ii8+CiAgPGNpcmNsZSBjeD0iMzM2IiBjeT0iMzgwIiByPSIyMiIgZmlsbD0iI2Y1OWUwYiIvPgogIDwhLS0gU21hbGwgbGFiZWxzIHVuZGVyIGRvdHMgLS0+CiAgPHRleHQgeD0iMTc2IiB5PSI0MjAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZmlsbD0iIzNhNTQ0NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T25saW5lPC90ZXh0PgogIDx0ZXh0IHg9IjI1NiIgeT0iNDIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiMzYTU0NDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlByw6RzZW56PC90ZXh0PgogIDx0ZXh0IHg9IjMzNiIgeT0iNDIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiMzYTU0NDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlVybGF1YjwvdGV4dD4KPC9zdmc+">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSI4MCIgZmlsbD0iIzA5MGUwYyIvPgogIDwhLS0gU3VidGxlIGdyaWQgbGluZXMgLS0+CiAgPGxpbmUgeDE9IjAiIHkxPSIxNzAiIHgyPSI1MTIiIHkyPSIxNzAiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjAiIHkxPSIzNDAiIHgyPSI1MTIiIHkyPSIzNDAiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjE3MCIgeTE9IjAiIHgyPSIxNzAiIHkyPSI1MTIiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjM0MCIgeTE9IjAiIHgyPSIzNDAiIHkyPSI1MTIiIHN0cm9rZT0iIzFmMmUyNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPCEtLSBTVCBsZXR0ZXJzIChTY2h1bFRyYWNrZXIpIC0tPgogIDx0ZXh0IHg9IjI1NiIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iMTYwIiBmaWxsPSIjNGVhZDcyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBsZXR0ZXItc3BhY2luZz0iLTgiPlNUPC90ZXh0PgogIDwhLS0gR3JlZW4gYWNjZW50IGJhciAtLT4KICA8cmVjdCB4PSI4MCIgeT0iMzEwIiB3aWR0aD0iMzUyIiBoZWlnaHQ9IjYiIHJ4PSIzIiBmaWxsPSIjNGVhZDcyIiBvcGFjaXR5PSIwLjgiLz4KICA8IS0tIFRocmVlIGNvbG9yZWQgZG90czogT25saW5lLCBQcsOkc2VueiwgVXJsYXViIC0tPgogIDxjaXJjbGUgY3g9IjE3NiIgY3k9IjM4MCIgcj0iMjIiIGZpbGw9IiMyMmM1NWUiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIzODAiIHI9IjIyIiBmaWxsPSIjM2I4MmY2Ii8+CiAgPGNpcmNsZSBjeD0iMzM2IiBjeT0iMzgwIiByPSIyMiIgZmlsbD0iI2Y1OWUwYiIvPgogIDwhLS0gU21hbGwgbGFiZWxzIHVuZGVyIGRvdHMgLS0+CiAgPHRleHQgeD0iMTc2IiB5PSI0MjAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZmlsbD0iIzNhNTQ0NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T25saW5lPC90ZXh0PgogIDx0ZXh0IHg9IjI1NiIgeT0iNDIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiMzYTU0NDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlByw6RzZW56PC90ZXh0PgogIDx0ZXh0IHg9IjMzNiIgeT0iNDIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiMzYTU0NDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlVybGF1YjwvdGV4dD4KPC9zdmc+">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SchulTracker">
+<meta name="theme-color" content="#4ead72">
+<meta name="mobile-web-app-capable" content="yes">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -332,6 +340,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="topbar-user" id="topbarUser"></div>
+      <button id="installBtn" onclick="installApp()" title="App installieren" style="display:none;background:var(--green-dim);border:1px solid var(--green);color:var(--green);font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:5px 10px;cursor:pointer;gap:4px;align-items:center;white-space:nowrap;letter-spacing:0.05em;">⬇ INSTALLIEREN</button>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Dark/Light Mode">🌙</button>
       <button class="topbar-logout" onclick="logout()">Abmelden</button>
     </div>
@@ -981,6 +990,41 @@ function toast(msg){
   setTimeout(function(){el.classList.remove('show');},2800);
 }
 
+
+
+// ── PWA INSTALL ──
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE = 'schultracker-v1';
+    const ASSETS = [location.href];
+    self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))));
+    self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBtn').style.display = 'none';
+  deferredPrompt = null;
+  toast('✓ App installiert!');
+});
+async function installApp(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome} = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBtn').style.display = 'none';
+}
 
 // ── THEME ──
 function initTheme(){
