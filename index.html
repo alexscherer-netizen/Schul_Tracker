@@ -17,7 +17,32 @@
   --sage:#7aab8a; --sage-dim:rgba(122,171,138,0.12);
   --amber:#c8a84b; --amber-dim:rgba(200,168,75,0.12);
   --danger:#b05050; --warn:#b07840;
+  /* TYPE COLORS - vivid */
+  --c-online:#22c55e; --c-online-dim:rgba(34,197,94,0.15); --c-online-border:rgba(34,197,94,0.6);
+  --c-praesenz:#3b82f6; --c-praesenz-dim:rgba(59,130,246,0.15); --c-praesenz-border:rgba(59,130,246,0.6);
+  --c-urlaub:#f59e0b; --c-urlaub-dim:rgba(245,158,11,0.15); --c-urlaub-border:rgba(245,158,11,0.6);
 }
+
+/* LIGHT MODE */
+body.light {
+  --bg:#f0f4f2; --bg2:#e4ede8; --surface:#ffffff; --surface2:#f5f9f6;
+  --border:#c8ddd2; --border2:#b0ccbe;
+  --text:#1a2e24; --text-dim:#3a6b52; --muted:#7aaa90;
+  --green:#16a34a; --green-dim:rgba(22,163,74,0.12); --green-glow:rgba(22,163,74,0.25);
+  --teal:#0d9488; --teal-dim:rgba(13,148,136,0.12);
+  --sage:#4a8c65; --sage-dim:rgba(74,140,101,0.12);
+  --amber:#b45309; --amber-dim:rgba(180,83,9,0.12);
+  --danger:#dc2626; --warn:#c2640a;
+  --c-online:#16a34a; --c-online-dim:rgba(22,163,74,0.12); --c-online-border:rgba(22,163,74,0.6);
+  --c-praesenz:#1d4ed8; --c-praesenz-dim:rgba(29,78,216,0.12); --c-praesenz-border:rgba(29,78,216,0.6);
+  --c-urlaub:#b45309; --c-urlaub-dim:rgba(180,83,9,0.12); --c-urlaub-border:rgba(180,83,9,0.6);
+}
+body.light::before { opacity: 0.015; }
+body.light::after { background-image: linear-gradient(rgba(22,163,74,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(22,163,74,0.05) 1px,transparent 1px); }
+
+/* THEME TOGGLE */
+.theme-toggle { background:none; border:1px solid var(--border); color:var(--muted); font-size:1rem; width:34px; height:34px; border-radius:50%; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.theme-toggle:hover { border-color:var(--green); color:var(--green); }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
@@ -49,7 +74,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .app{display:none;position:relative;z-index:1;}
 
 /* ── TOP BAR (mobile) ── */
-.topbar{position:sticky;top:0;z-index:50;background:rgba(9,14,12,0.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+.topbar{position:sticky;top:0;z-index:50;background:var(--bg);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
 .topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.05em;}
 .topbar-title span{color:var(--green);}
 .topbar-user{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);text-align:right;}
@@ -76,11 +101,11 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;}
 .hero-stat{background:var(--surface);border:1px solid var(--border);padding:20px 18px;position:relative;overflow:hidden;}
 .hero-stat::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;}
-.online-stat::after{background:linear-gradient(90deg,var(--green),transparent);}
-.praesenz-stat::after{background:linear-gradient(90deg,var(--teal),transparent);}
+.online-stat::after{background:linear-gradient(90deg,var(--c-online),transparent);}
+.praesenz-stat::after{background:linear-gradient(90deg,var(--c-praesenz),transparent);}
 .hero-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,10vw,4.5rem);line-height:1;}
-.online-stat .hero-num{color:var(--green);}
-.praesenz-stat .hero-num{color:var(--teal);}
+.online-stat .hero-num{color:var(--c-online);}
+.praesenz-stat .hero-num{color:var(--c-praesenz);}
 .hero-label{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:5px;}
 .hero-limit{position:absolute;top:14px;right:14px;font-family:'JetBrains Mono',monospace;font-size:0.56rem;color:var(--muted);text-align:right;line-height:1.5;}
 .hero-limit strong{display:block;font-size:0.9rem;font-weight:600;color:var(--text-dim);}
@@ -91,9 +116,9 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 /* ── PROGRESS ── */
 .status-bar-wrap{background:var(--surface);border:1px solid var(--border);border-top:none;padding:16px 18px;margin-bottom:2px;}
 .bar-labels{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);margin-bottom:7px;letter-spacing:0.04em;flex-wrap:wrap;gap:4px;}
-.segmented-bar{height:4px;background:rgba(255,255,255,0.04);overflow:hidden;display:flex;gap:1px;}
-.seg-online{background:var(--green);height:100%;transition:width 0.9s cubic-bezier(.22,1,.36,1);}
-.seg-praesenz{background:var(--teal);height:100%;transition:width 0.9s cubic-bezier(.22,1,.36,1);}
+.segmented-bar{height:4px;background:var(--border);overflow:hidden;display:flex;gap:1px;}
+.seg-online{background:var(--c-online);height:100%;transition:width 0.9s cubic-bezier(.22,1,.36,1);}
+.seg-praesenz{background:var(--c-praesenz);height:100%;transition:width 0.9s cubic-bezier(.22,1,.36,1);}
 
 /* ── MINI CARDS ── */
 .mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:2px;margin-bottom:28px;}
@@ -106,15 +131,15 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .btn-today{border:2px solid;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.08em;padding:20px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all 0.18s;-webkit-appearance:none;}
 .btn-today-icon{font-size:2.4rem;line-height:1;filter:drop-shadow(0 0 6px currentColor);}
 .btn-today-sub{font-family:'JetBrains Mono',monospace;font-size:0.52rem;letter-spacing:0.08em;text-transform:uppercase;}
-.btn-today-online{background:rgba(78,173,114,0.18);border-color:rgba(78,173,114,0.6);color:var(--green);}
-.btn-today-online .btn-today-sub{color:rgba(78,173,114,0.7);}
-.btn-today-praesenz{background:rgba(58,158,138,0.18);border-color:rgba(58,158,138,0.6);color:var(--teal);}
-.btn-today-praesenz .btn-today-sub{color:rgba(58,158,138,0.7);}
-.btn-today-urlaub{background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.6);color:var(--amber);}
-.btn-today-urlaub .btn-today-sub{color:rgba(200,168,75,0.7);}
-.btn-today.active.btn-today-online{background:rgba(78,173,114,0.32);border-color:var(--green);box-shadow:0 0 24px rgba(78,173,114,0.25);}
-.btn-today.active.btn-today-praesenz{background:rgba(58,158,138,0.32);border-color:var(--teal);box-shadow:0 0 24px rgba(58,158,138,0.25);}
-.btn-today.active.btn-today-urlaub{background:rgba(200,168,75,0.32);border-color:var(--amber);box-shadow:0 0 24px rgba(200,168,75,0.25);}
+.btn-today-online{background:var(--c-online-dim);border-color:var(--c-online-border);color:var(--c-online);}
+.btn-today-online .btn-today-sub{color:var(--c-online);opacity:0.7;}
+.btn-today-praesenz{background:var(--c-praesenz-dim);border-color:var(--c-praesenz-border);color:var(--c-praesenz);}
+.btn-today-praesenz .btn-today-sub{color:var(--c-praesenz);opacity:0.7;}
+.btn-today-urlaub{background:var(--c-urlaub-dim);border-color:var(--c-urlaub-border);color:var(--c-urlaub);}
+.btn-today-urlaub .btn-today-sub{color:var(--c-urlaub);opacity:0.7;}
+.btn-today.active.btn-today-online{background:var(--c-online-dim);border-color:var(--c-online);box-shadow:0 0 28px var(--c-online-dim);filter:brightness(1.3);}
+.btn-today.active.btn-today-praesenz{background:var(--c-praesenz-dim);border-color:var(--c-praesenz);box-shadow:0 0 28px var(--c-praesenz-dim);filter:brightness(1.3);}
+.btn-today.active.btn-today-urlaub{background:var(--c-urlaub-dim);border-color:var(--c-urlaub);box-shadow:0 0 28px var(--c-urlaub-dim);filter:brightness(1.3);}
 
 /* ── EMAIL ── */
 .email-block,.settings-block,.calendar-block{background:var(--surface);border:1px solid var(--border);padding:18px;margin-bottom:28px;}
@@ -155,12 +180,12 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .cal-weekdays{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:2px;}
 .cal-weekday{font-family:'JetBrains Mono',monospace;font-size:0.54rem;letter-spacing:0.1em;color:var(--muted);text-align:center;padding:4px 0;}
 .cal-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;}
-.cal-day{aspect-ratio:1;background:rgba(255,255,255,0.015);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);gap:2px;-webkit-appearance:none;}
+.cal-day{aspect-ratio:1;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);gap:2px;-webkit-appearance:none;}
 .cal-day:hover{background:var(--surface2);border-color:var(--border2);color:var(--text-dim);}
 .cal-day.today{border:2px solid var(--amber);color:var(--amber);background:var(--amber-dim);}
-.cal-day.online{background:rgba(78,173,114,0.32);border:2px solid var(--green);color:var(--green);}
-.cal-day.praesenz{background:rgba(58,158,138,0.32);border:2px solid var(--teal);color:var(--teal);}
-.cal-day.urlaub{background:rgba(200,168,75,0.32);border:2px solid var(--amber);color:var(--amber);}
+.cal-day.online{background:var(--c-online-dim);border:2px solid var(--c-online);color:var(--c-online);}
+.cal-day.praesenz{background:var(--c-praesenz-dim);border:2px solid var(--c-praesenz);color:var(--c-praesenz);}
+.cal-day.urlaub{background:var(--c-urlaub-dim);border:2px solid var(--c-urlaub);color:var(--c-urlaub);}
 .cal-day.feiertag{background:rgba(100,100,130,0.22);border:2px solid rgba(160,160,200,0.5);color:#8888aa;cursor:default;}
 .cal-day.empty{background:none;border-color:transparent;cursor:default;}
 .cal-day.future{opacity:0.2;cursor:default;pointer-events:none;}
@@ -169,9 +194,9 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .cal-day.feiertag .cal-day-icon{filter:none;}
 .cal-legend{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);}
 .ldot{display:inline-block;width:7px;height:7px;margin-right:4px;}
-.ldot.online{background:var(--green);}
-.ldot.praesenz{background:var(--teal);}
-.ldot.urlaub{background:var(--amber);}
+.ldot.online{background:var(--c-online);}
+.ldot.praesenz{background:var(--c-praesenz);}
+.ldot.urlaub{background:var(--c-urlaub);}
 .ldot.today{background:var(--amber);}
 .ldot.feiertag{background:#888aaa;}
 
@@ -186,9 +211,9 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .history-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;}
 .h-date{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);flex-shrink:0;}
 .h-type{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.06em;flex:1;}
-.h-type.online{color:var(--green);}
-.h-type.praesenz{color:var(--teal);}
-.h-type.urlaub{color:var(--amber);}
+.h-type.online{color:var(--c-online);}
+.h-type.praesenz{color:var(--c-praesenz);}
+.h-type.urlaub{color:var(--c-urlaub);}
 .btn-del{background:none;border:none;color:var(--muted);font-size:0.68rem;cursor:pointer;font-family:'JetBrains Mono',monospace;padding:4px 8px;transition:color 0.15s;flex-shrink:0;}
 .btn-del:hover{color:var(--danger);}
 .empty{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);padding:18px 0;}
@@ -307,6 +332,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="topbar-user" id="topbarUser"></div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Dark/Light Mode">🌙</button>
       <button class="topbar-logout" onclick="logout()">Abmelden</button>
     </div>
   </div>
@@ -348,9 +374,9 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     </div>
 
     <div class="mini-grid" style="margin-top:2px;">
-      <div class="mini-card"><div class="mini-num" id="miniOnlineLeft" style="color:var(--green)">—</div><div class="mini-label">Online verbleib.</div></div>
-      <div class="mini-card"><div class="mini-num" id="miniPraesenzLeft" style="color:var(--teal)">—</div><div class="mini-label">Präsenz noch nötig</div></div>
-      <div class="mini-card"><div class="mini-num" id="miniUrlaub" style="color:var(--sage)">—</div><div class="mini-label">Urlaubstage</div></div>
+      <div class="mini-card"><div class="mini-num" id="miniOnlineLeft" style="color:var(--c-online)">—</div><div class="mini-label">Online verbleib.</div></div>
+      <div class="mini-card"><div class="mini-num" id="miniPraesenzLeft" style="color:var(--c-praesenz)">—</div><div class="mini-label">Präsenz noch nötig</div></div>
+      <div class="mini-card"><div class="mini-num" id="miniUrlaub" style="color:var(--c-urlaub)">—</div><div class="mini-label">Urlaubstage</div></div>
       <div class="mini-card"><div class="mini-num" id="miniTotal" style="color:var(--text-dim)">—</div><div class="mini-label">Eingetragen</div></div>
     </div>
 
@@ -463,31 +489,10 @@ const { createClient } = supabase;
 // ── SUPABASE CLIENT ──
 // Wir initialisieren den Client ohne persistenten Storage
 // und steuern das selbst je nach "Angemeldet bleiben"
-const sb = createClient(SUPA_URL, SUPA_KEY, {
-  auth: {
-    persistSession: true,
-    storageKey: 'schultracker_session',
-    storage: {
-      getItem: (key) => {
-        // Zuerst localStorage (angemeldet bleiben), dann sessionStorage (nur Browser-Session)
-        return localStorage.getItem(key) || sessionStorage.getItem(key);
-      },
-      setItem: (key, value) => {
-        const remember = localStorage.getItem('schultracker_remember') === 'true';
-        if(remember){
-          localStorage.setItem(key, value);
-        } else {
-          sessionStorage.setItem(key, value);
-          localStorage.removeItem(key); // sicherheitshalber entfernen
-        }
-      },
-      removeItem: (key) => {
-        localStorage.removeItem(key);
-        sessionStorage.removeItem(key);
-      }
-    }
-  }
-});
+// Standard Supabase client - speichert Session in localStorage
+const sb = createClient(SUPA_URL, SUPA_KEY);
+
+initTheme();
 
 // State
 let entries = {};
@@ -560,16 +565,11 @@ async function login(){
   const remember = document.getElementById('rememberMe').checked;
   const btn      = document.querySelector('#loginForm .auth-btn');
   btn.disabled=true; btn.textContent='BITTE WARTEN...';
-
-  // Remember-Flag VOR dem Login setzen, damit storage.setItem es korrekt verwendet
+  // Speichere Präferenz: bei Logout ohne "remember" wird Session gelöscht
   localStorage.setItem('schultracker_remember', remember ? 'true' : 'false');
-
   const {error} = await sb.auth.signInWithPassword({email, password:pass});
   btn.disabled=false; btn.textContent='ANMELDEN';
-  if(error){
-    document.getElementById('authErr').textContent='⚠ '+error.message;
-    localStorage.removeItem('schultracker_remember');
-  }
+  if(error) document.getElementById('authErr').textContent='⚠ '+error.message;
 }
 
 async function register(){
@@ -585,6 +585,10 @@ async function register(){
 
 async function logout(){
   await sb.auth.signOut();
+  // Wenn nicht "angemeldet bleiben" - Session komplett löschen
+  if(localStorage.getItem('schultracker_remember') !== 'true'){
+    localStorage.removeItem('schultracker_session');
+  }
   entries = {}; cfg = {total:345,onlineMax:49,praesenzMin:51,bundesland:''};
 }
 
@@ -975,6 +979,23 @@ function toast(msg){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
   setTimeout(function(){el.classList.remove('show');},2800);
+}
+
+
+// ── THEME ──
+function initTheme(){
+  const saved = localStorage.getItem('schultracker_theme') || 'dark';
+  applyTheme(saved);
+}
+function applyTheme(theme){
+  document.body.classList.toggle('light', theme==='light');
+  const btn = document.getElementById('themeToggle');
+  if(btn) btn.textContent = theme==='light' ? '🌙' : '☀️';
+  localStorage.setItem('schultracker_theme', theme);
+}
+function toggleTheme(){
+  const isLight = document.body.classList.contains('light');
+  applyTheme(isLight ? 'dark' : 'light');
 }
 
 // ── MAIN RENDER ──
