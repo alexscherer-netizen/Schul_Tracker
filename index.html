@@ -506,12 +506,28 @@ const { createClient } = supabase;
 // ── SUPABASE CLIENT ──
 // Wir initialisieren den Client ohne persistenten Storage
 // und steuern das selbst je nach "Angemeldet bleiben"
-// Supabase client mit explizitem localStorage (Edge Tracking Prevention Fix)
+// Cookie-basierter Storage für Edge Tracking Prevention Fix
+const cookieStorage = {
+  getItem: (key) => {
+    const match = document.cookie.match(new RegExp('(^| )' + encodeURIComponent(key) + '=([^;]+)'));
+    if(!match) return null;
+    try { return decodeURIComponent(match[2]); } catch(e) { return null; }
+  },
+  setItem: (key, value) => {
+    const days = 30;
+    const expires = new Date(Date.now() + days*864e5).toUTCString();
+    document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+  },
+  removeItem: (key) => {
+    document.cookie = encodeURIComponent(key) + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  }
+};
+
 const sb = createClient(SUPA_URL, SUPA_KEY, {
   auth: {
     persistSession: true,
-    storageKey: 'sb-sntkvqzfiyhtvtufqfgp-auth',
-    storage: window.localStorage,
+    storageKey: 'sb-schultracker-auth',
+    storage: cookieStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true,
   }
