@@ -509,6 +509,22 @@ const { createClient } = supabase;
 // Supabase client
 const sb = createClient(SUPA_URL, SUPA_KEY);
 
+// ── STATE ──
+let entries = {};
+let cfg = {total:345, onlineMax:49, praesenzMin:51, bundesland:''};
+let emailCfg = {to:'', name:'', recipient:'', provider:'mailto', autoMail:false};
+let currentUser = null;
+let currentProvider = 'mailto';
+let histOpen = false;
+let eggClicks = 0, eggTimer = null;
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+let saveTimeout = null;
+
+// ── HELPERS ──
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function fmt(s){ if(!s) return ''; const [y,m,d]=s.split('-'); return d+'.'+m+'.'+y; }
+function pad(n){ return n<10?'0'+n:''+n; }
+
 // ── SESSION MANAGEMENT ──
 const SESSION_KEY = 'schultracker_manual_session';
 
@@ -1092,6 +1108,7 @@ function toggleTheme(){
   const isLight = document.body.classList.contains('light');
   applyTheme(isLight ? 'dark' : 'light');
 }
+initTheme();
 
 // ── MAIN RENDER ──
 function render(){
