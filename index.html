@@ -553,6 +553,8 @@ async function showApp(user) {
   document.getElementById('app').style.display = 'block';
   document.getElementById('topbarUser').textContent = user.email;
   document.getElementById('tickerText').textContent = 'LADE DATEN...';
+  // Kurzer Delay damit Supabase Session vollständig initialisiert ist
+  await new Promise(r => setTimeout(r, 500));
   try { await loadData(); } catch(e) { console.error('loadData:', e); }
   document.getElementById('sTotal').value         = cfg.total;
   document.getElementById('sOnline').value        = cfg.onlineMax;
@@ -657,14 +659,18 @@ async function logout(){
 async function loadData(){
   if(!currentUser) return;
 
-  // RLS filtert automatisch nach auth.uid() - kein user_id Filter nötig
+  // Prüfe ob Session wirklich aktiv ist
+  const { data: { session } } = await sb.auth.getSession();
+  console.log('loadData - aktive Session:', session ? session.user.email : 'KEINE!');
+  if(!session) return;
+
   const {data:entData, error:entErr} = await sb.from('schultracker_entries').select('date,type');
-  console.log('entries response:', entData ? entData.length : 0, 'error:', entErr);
+  console.log('entries:', entData ? entData.length : 0, 'error:', entErr ? entErr.message : 'ok');
   entries = {};
   if(entData) entData.forEach(e => entries[e.date] = e.type);
 
   const {data:cfgData, error:cfgErr} = await sb.from('schultracker_config').select('*').maybeSingle();
-  console.log('config response:', cfgData ? 'found' : 'null', 'error:', cfgErr);
+  console.log('config:', cfgData ? 'gefunden' : 'null', 'error:', cfgErr ? cfgErr.message : 'ok');
   if(cfgData){
     cfg.total       = cfgData.total        || 345;
     cfg.onlineMax   = cfgData.online_max   || 49;
