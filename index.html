@@ -600,7 +600,7 @@ async function sendPasswordReset(){
   if(!email){ document.getElementById('authErr').textContent='⚠ Bitte E-Mail eingeben.'; return; }
   btn.disabled=true; btn.textContent='SENDE...';
   const {error} = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.href
+    redirectTo: 'https://alexscherer-netizen.github.io/Schul_Tracker/'
   });
   btn.disabled=false; btn.textContent='LINK SENDEN';
   if(error){
