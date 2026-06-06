@@ -607,26 +607,45 @@ function showAuth() {
   document.getElementById('app').style.display = 'none';
 }
 
+// Einmaliger Start-Handler
+let appStarted = false;
+
+async function startApp() {
+  if(appStarted) return;
+
+  // 1. Versuche bestehende Session zu laden
+  const { data: { session } } = await sb.auth.getSession();
+
+  if(session && session.user) {
+    appStarted = true;
+    await showApp(session.user);
+    return;
+  }
+
+  // 2. Versuche gespeicherten Token wiederherzustellen
+  const restored = await restoreSession();
+  if(restored) return; // onAuthStateChange kümmert sich darum
+
+  // 3. Kein Login -> zeige Auth
+  showAuth();
+}
+
 sb.auth.onAuthStateChange(async (event, session) => {
-  if(session && session.user){
+  console.log('auth:', event);
+  if((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && session.user) {
     saveSessionManually(session);
-    if(!currentUser || currentUser.id !== session.user.id){
+    if(!appStarted) {
+      appStarted = true;
       await showApp(session.user);
     }
-  } else if(event === 'SIGNED_OUT'){
+  } else if(event === 'SIGNED_OUT') {
+    appStarted = false;
     showAuth();
   }
 });
 
-// Beim Start: erst manuelle Session wiederherstellen
-(async () => {
-  const restored = await restoreSession();
-  if(!restored){
-    // Kein gespeicherter Token - zeige Auth
-    showAuth();
-  }
-  // showApp wird durch onAuthStateChange getriggert wenn restoreSession erfolgreich
-})();
+// Start
+startApp();
 
 function switchTab(tab){
   document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
