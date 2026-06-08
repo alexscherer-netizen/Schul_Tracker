@@ -184,6 +184,8 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .email-btn-praesenz:hover{background:rgba(58,158,138,0.22);border-color:var(--teal);}
 .email-btn-urlaub{background:rgba(200,168,75,0.1);border-color:rgba(200,168,75,0.4);color:var(--amber);}
 .email-btn-urlaub:hover{background:rgba(200,168,75,0.22);border-color:var(--amber);}
+.email-btn-krank{background:rgba(176,80,80,0.12);border-color:rgba(176,80,80,0.45);color:var(--danger);}
+.email-btn-krank:hover{background:rgba(176,80,80,0.24);border-color:var(--danger);}
 
 /* ── BUNDESLAND ── */
 #blButtons{display:flex;flex-wrap:wrap;gap:6px;}
@@ -424,12 +426,18 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
         <div class="fg"><label>Ansprechperson</label><input type="text" id="emailRecipient" placeholder="Frau Musterfrau" oninput="saveEmailCfgLocal()"></div>
         <div class="fg"><label>Dein Name</label><input type="text" id="emailName" placeholder="Max Mustermann" oninput="saveEmailCfgLocal()"></div>
       </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Textvariante</label>
+        <div class="email-provider-row" id="variantRow"></div>
+      </div>
+      <div id="mailPreview" style="background:var(--bg2);border:1px solid var(--border);padding:12px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text-dim);white-space:pre-wrap;line-height:1.6;max-height:160px;overflow-y:auto;display:none;"></div>
       <div class="email-btn-row">
         <button class="email-btn email-btn-online" onclick="sendMail('online')"><span>🏠</span>Online melden</button>
         <button class="email-btn email-btn-praesenz" onclick="sendMail('praesenz')"><span>🏫</span>Präsenz bestätigen</button>
         <button class="email-btn email-btn-urlaub" onclick="sendMail('urlaub')"><span>🏖️</span>Abwesenheit melden</button>
+        <button class="email-btn email-btn-krank" onclick="sendMail('krank')"><span>🤒</span>Krank melden</button>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);margin-top:8px;">// "📱 Mail-App" öffnet die Mail-App deines Geräts — die anderen öffnen den Browser</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--muted);margin-top:8px;">// "📱 Mail-App" öffnet die Mail-App deines Geräts — die anderen öffnen den Browser<br>// Begrüßung wird automatisch angepasst: bis 9 Uhr "Guten Morgen", bis 18 Uhr "Guten Tag", danach "Guten Abend"</div>
     </div>
 
     <!-- BUNDESLAND -->
@@ -512,7 +520,7 @@ const sb = createClient(SUPA_URL, SUPA_KEY);
 // ── STATE ──
 let entries = {};
 let cfg = {total:345, onlineMax:49, praesenzMin:51, bundesland:''};
-let emailCfg = {to:'', name:'', recipient:'', provider:'mailto', autoMail:false};
+let emailCfg = {to:'', name:'', recipient:'', provider:'mailto', autoMail:false, variant:'random'};
 let currentUser = null;
 let currentProvider = 'mailto';
 let histOpen = false;
@@ -578,6 +586,8 @@ async function showApp(user) {
   document.getElementById('emailRecipient').value = emailCfg.recipient;
   currentProvider = emailCfg.provider;
   renderProviderButtons();
+  renderVariantButtons();
+  updateMailPreview();
   updateAutoMailToggle();
   render();
 }
@@ -669,7 +679,7 @@ async function logout(){
   clearSavedSession();
   await sb.auth.signOut();
   entries = {}; cfg = {total:345,onlineMax:49,praesenzMin:51,bundesland:''};
-  emailCfg = {to:'',name:'',recipient:'',provider:'mailto',autoMail:false};
+  emailCfg = {to:'',name:'',recipient:'',provider:'mailto',autoMail:false,variant:'random'};
 }
 
 // ── DATA LOAD / SAVE ──
@@ -698,6 +708,7 @@ async function loadData(){
     emailCfg.recipient = cfgData.email_recipient || '';
     emailCfg.provider  = cfgData.email_provider  || 'mailto';
     emailCfg.autoMail  = cfgData.auto_mail       || false;
+    emailCfg.variant   = cfgData.email_variant   || 'random';
     currentProvider    = emailCfg.provider;
   }
 }
@@ -721,7 +732,7 @@ async function saveCfgToDb(){
     total:cfg.total, online_max:cfg.onlineMax, praesenz_min:cfg.praesenzMin,
     bundesland:cfg.bundesland,
     email_to:emailCfg.to, email_name:emailCfg.name, email_recipient:emailCfg.recipient,
-    email_provider:emailCfg.provider, auto_mail:emailCfg.autoMail,
+    email_provider:emailCfg.provider, auto_mail:emailCfg.autoMail, email_variant:emailCfg.variant,
     updated_at: new Date().toISOString()
   }, {onConflict:'user_id'});
 }
@@ -738,6 +749,7 @@ function saveEmailCfgLocal(){
   emailCfg.to        = document.getElementById('emailTo').value;
   emailCfg.name      = document.getElementById('emailName').value;
   emailCfg.recipient = document.getElementById('emailRecipient').value;
+  updateMailPreview();
   debounceSave();
 }
 
@@ -886,6 +898,51 @@ function setProvider(p){
   debounceSave();
 }
 
+// ── TEXTVARIANTEN ──
+function renderVariantButtons(){
+  const row=document.getElementById('variantRow');
+  if(!row) return;
+  row.innerHTML='';
+  // "Zufällig" Button
+  const randomBtn=document.createElement('button');
+  randomBtn.textContent='🎲 Zufällig';
+  randomBtn.className='provider-btn'+((emailCfg.variant==='random'||emailCfg.variant==null)?' active':'');
+  randomBtn.addEventListener('click',function(){setVariant('random');});
+  row.appendChild(randomBtn);
+  // Named-Varianten (Namen aus online-Liste, da alle Typen gleiche Namen-Reihenfolge haben)
+  mailVariants.online.forEach(function(v,i){
+    const btn=document.createElement('button');
+    btn.textContent=v.name;
+    btn.className='provider-btn'+(emailCfg.variant===i?' active':'');
+    btn.addEventListener('click',function(){setVariant(i);});
+    row.appendChild(btn);
+  });
+}
+
+function setVariant(v){
+  emailCfg.variant=v;
+  renderVariantButtons();
+  updateMailPreview();
+  debounceSave();
+}
+
+function updateMailPreview(){
+  const prev=document.getElementById('mailPreview');
+  if(!prev) return;
+  if(emailCfg.variant==='random'||emailCfg.variant==null){
+    prev.style.display='none';
+    return;
+  }
+  const recipient=document.getElementById('emailRecipient').value.trim()||'Frau/Herr [Name]';
+  const name=document.getElementById('emailName').value.trim()||'[Dein Name]';
+  const dateStr=fmt(todayStr());
+  const idx=Math.min(emailCfg.variant, mailVariants.online.length-1);
+  const vName=mailVariants.online[idx] ? mailVariants.online[idx].name : '';
+  const text=buildMailText('online', recipient, dateStr)+'\n\nMit freundlichen Grüßen\n'+name;
+  prev.textContent='Vorschau "'+vName+'" (Beispiel: Online):\n\n'+text;
+  prev.style.display='block';
+}
+
 function toggleAutoMail(){
   emailCfg.autoMail=!emailCfg.autoMail;
   updateAutoMailToggle();
@@ -898,26 +955,70 @@ function updateAutoMailToggle(){
   if(el) el.classList.toggle('on',!!emailCfg.autoMail);
 }
 
-const mailVariants=function(r){return{
-  online:[
-    function(d){return 'Guten Morgen '+r+',\n\nich hoffe Ihnen geht es gut.\n\nHiermit möchte ich Sie darüber informieren, dass ich heute am '+d+' am Unterricht online teilnehmen werde.';},
-    function(d){return 'Guten Morgen '+r+',\n\nich wollte Ihnen kurz mitteilen, dass ich am heutigen Tag ('+d+') per Online-Zuschaltung am Unterricht teilnehmen werde.';},
-    function(d){return 'Sehr geehrte/r '+r+',\n\nhiermit informiere ich Sie, dass ich am '+d+' aus dem Homeoffice online am Unterricht teilnehmen werde.';},
-    function(d){return 'Guten Morgen '+r+',\n\nwie bereits bekannt nehme ich heute am '+d+' online am Unterricht teil und stehe wie gewohnt zur Verfügung.';},
+// Zeitabhängige Begrüßung: bis 9 Uhr "Guten Morgen", bis 18 Uhr "Guten Tag", danach "Guten Abend"
+function getGreeting(){
+  const h = new Date().getHours();
+  if(h < 9)  return 'Guten Morgen';
+  if(h < 18) return 'Guten Tag';
+  return 'Guten Abend';
+}
+
+// Textvarianten - {greet}=Begrüßung, {r}=Ansprechperson, {d}=Datum
+// Jede Variante hat einen Namen (zur Auswahl) und einen Text
+const mailVariants = {
+  online: [
+    {name:'Freundlich',   text:'{greet} {r},\n\nich hoffe Ihnen geht es gut.\n\nHiermit möchte ich Sie darüber informieren, dass ich heute am {d} am Unterricht online teilnehmen werde.'},
+    {name:'Kurz',         text:'{greet} {r},\n\nich wollte Ihnen kurz mitteilen, dass ich am heutigen Tag ({d}) per Online-Zuschaltung am Unterricht teilnehmen werde.'},
+    {name:'Formell',      text:'Sehr geehrte/r {r},\n\nhiermit informiere ich Sie, dass ich am {d} aus dem Homeoffice online am Unterricht teilnehmen werde.'},
+    {name:'Sachlich',     text:'{greet} {r},\n\nwie bereits bekannt nehme ich heute am {d} online am Unterricht teil und stehe wie gewohnt zur Verfügung.'},
+    {name:'Knapp',        text:'{greet} {r},\n\nkurze Info: Ich bin heute ({d}) online im Unterricht zugeschaltet.'},
+    {name:'Höflich',      text:'{greet} {r},\n\nich gebe Ihnen kurz Bescheid, dass ich heute am {d} online am Unterricht teilnehmen werde. Bei Fragen erreichen Sie mich wie gewohnt.'},
+    {name:'Technisch',    text:'{greet} {r},\n\nich nehme heute am {d} per Videokonferenz am Unterricht teil. Ich bin pünktlich zu Beginn online und einsatzbereit.'},
+    {name:'Ausführlich',  text:'Sehr geehrte/r {r},\n\nich hoffe, diese Nachricht erreicht Sie gut.\n\nHiermit teile ich Ihnen mit, dass ich am heutigen Tag, dem {d}, online am Unterricht teilnehmen werde. Ich habe mich entsprechend vorbereitet und stehe für die gesamte Unterrichtszeit zur Verfügung.'},
   ],
-  praesenz:[
-    function(d){return 'Guten Morgen '+r+',\n\nich hoffe Ihnen geht es gut.\n\nHiermit bestätige ich, dass ich heute am '+d+' persönlich vor Ort am Unterricht teilnehmen werde.';},
-    function(d){return 'Guten Morgen '+r+',\n\nkurze Rückmeldung: Ich werde heute am '+d+' wie gewohnt vor Ort im Unterricht anwesend sein.';},
-    function(d){return 'Sehr geehrte/r '+r+',\n\nhiermit bestätige ich meine Anwesenheit am Unterricht am '+d+'. Ich freue mich auf den heutigen Tag.';},
-    function(d){return 'Guten Morgen '+r+',\n\nich bestätige, dass ich am '+d+' in Präsenz am Unterricht teilnehmen werde und pünktlich vor Ort sein werde.';},
+  praesenz: [
+    {name:'Freundlich',   text:'{greet} {r},\n\nich hoffe Ihnen geht es gut.\n\nHiermit bestätige ich, dass ich heute am {d} persönlich vor Ort am Unterricht teilnehmen werde.'},
+    {name:'Kurz',         text:'{greet} {r},\n\nkurze Rückmeldung: Ich werde heute am {d} wie gewohnt vor Ort im Unterricht anwesend sein.'},
+    {name:'Formell',      text:'Sehr geehrte/r {r},\n\nhiermit bestätige ich meine Anwesenheit am Unterricht am {d}. Ich freue mich auf den heutigen Tag.'},
+    {name:'Sachlich',     text:'{greet} {r},\n\nich bestätige, dass ich am {d} in Präsenz am Unterricht teilnehmen werde und pünktlich vor Ort sein werde.'},
+    {name:'Knapp',        text:'{greet} {r},\n\nkurze Info: Ich bin heute ({d}) in Präsenz vor Ort.'},
+    {name:'Höflich',      text:'{greet} {r},\n\nich melde mich kurz, um Ihnen mitzuteilen, dass ich heute am {d} persönlich im Unterricht erscheinen werde. Bis später!'},
+    {name:'Pünktlich',    text:'{greet} {r},\n\nich bestätige meine Teilnahme am Präsenzunterricht am {d} und werde rechtzeitig vor Unterrichtsbeginn vor Ort sein.'},
+    {name:'Ausführlich',  text:'Sehr geehrte/r {r},\n\nich hoffe, es geht Ihnen gut.\n\nHiermit bestätige ich, dass ich am heutigen Tag, dem {d}, persönlich und in Präsenz am Unterricht teilnehmen werde. Ich werde pünktlich vor Ort sein und freue mich auf den Unterricht.'},
   ],
-  urlaub:[
-    function(d){return 'Guten Morgen '+r+',\n\nich hoffe Ihnen geht es gut.\n\nHiermit möchte ich Sie darüber informieren, dass ich heute am '+d+' leider nicht am Unterricht teilnehmen kann.';},
-    function(d){return 'Guten Morgen '+r+',\n\nleider muss ich Ihnen mitteilen, dass ich am '+d+' aufgrund meines Urlaubs nicht am Unterricht teilnehmen kann.';},
-    function(d){return 'Sehr geehrte/r '+r+',\n\nhiermit melde ich mich für den '+d+' ab. Ich befinde mich im Urlaub und werde nach meiner Rückkehr den Stoff nachholen.';},
-    function(d){return 'Guten Morgen '+r+',\n\nbitte nehmen Sie zur Kenntnis, dass ich heute am '+d+' urlaubsbedingt abwesend bin. Ich danke für Ihr Verständnis.';},
+  urlaub: [
+    {name:'Freundlich',   text:'{greet} {r},\n\nich hoffe Ihnen geht es gut.\n\nHiermit möchte ich Sie darüber informieren, dass ich heute am {d} leider nicht am Unterricht teilnehmen kann.'},
+    {name:'Urlaub',       text:'{greet} {r},\n\nleider muss ich Ihnen mitteilen, dass ich am {d} aufgrund meines Urlaubs nicht am Unterricht teilnehmen kann.'},
+    {name:'Formell',      text:'Sehr geehrte/r {r},\n\nhiermit melde ich mich für den {d} ab. Ich befinde mich im Urlaub und werde nach meiner Rückkehr den verpassten Stoff nachholen.'},
+    {name:'Sachlich',     text:'{greet} {r},\n\nbitte nehmen Sie zur Kenntnis, dass ich heute am {d} urlaubsbedingt abwesend bin. Ich danke für Ihr Verständnis.'},
+    {name:'Termin',       text:'{greet} {r},\n\nich kann heute am {d} aufgrund eines wichtigen privaten Termins leider nicht am Unterricht teilnehmen. Ich bitte um Ihr Verständnis.'},
+    {name:'Behörde',      text:'Sehr geehrte/r {r},\n\nich muss Ihnen mitteilen, dass ich am {d} wegen eines unaufschiebbaren Behördentermins nicht am Unterricht teilnehmen kann. Den Unterrichtsstoff hole ich selbstständig nach.'},
+    {name:'Familie',      text:'{greet} {r},\n\naus familiären Gründen kann ich heute am {d} leider nicht am Unterricht teilnehmen. Ich danke Ihnen für Ihr Verständnis und hole das Versäumte nach.'},
+    {name:'Ausführlich',  text:'Sehr geehrte/r {r},\n\nich hoffe, diese Nachricht erreicht Sie gut.\n\nleider muss ich Ihnen mitteilen, dass ich am heutigen Tag, dem {d}, nicht am Unterricht teilnehmen kann. Ich werde mich um den verpassten Stoff kümmern und bei Rückfragen auf meine Mitschüler bzw. die bereitgestellten Materialien zurückgreifen. Vielen Dank für Ihr Verständnis.'},
   ],
-};};
+  krank: [
+    {name:'Standard',     text:'{greet} {r},\n\nleider kann ich heute am {d} aus gesundheitlichen Gründen nicht am Unterricht teilnehmen. Ich melde mich zurück, sobald es mir besser geht.'},
+    {name:'Kurz',         text:'{greet} {r},\n\nich bin heute ({d}) krank und kann nicht am Unterricht teilnehmen. Ich entschuldige mich für die kurzfristige Absage.'},
+    {name:'Formell',      text:'Sehr geehrte/r {r},\n\nhiermit melde ich mich für den {d} krank. Ich werde mich umgehend zurückmelden, sobald ich wieder genesen bin.'},
+    {name:'Mit AU',       text:'Sehr geehrte/r {r},\n\nich bin seit heute, dem {d}, erkrankt und kann nicht am Unterricht teilnehmen. Eine ärztliche Bescheinigung reiche ich umgehend nach.'},
+    {name:'Erkältung',    text:'{greet} {r},\n\nleider hat es mich erwischt – ich bin erkältet und kann heute am {d} nicht am Unterricht teilnehmen. Ich kuriere mich aus und melde mich zurück, sobald es mir besser geht.'},
+    {name:'Arzttermin',   text:'{greet} {r},\n\nich muss heute am {d} aus gesundheitlichen Gründen einen Arzt aufsuchen und kann daher nicht am Unterricht teilnehmen. Ich danke für Ihr Verständnis.'},
+    {name:'Mehrtägig',    text:'Sehr geehrte/r {r},\n\nleider muss ich mich ab heute, dem {d}, krankmelden. Voraussichtlich werde ich einige Tage ausfallen und reiche bei Bedarf eine ärztliche Bescheinigung nach. Den Unterrichtsstoff hole ich selbstständig nach.'},
+    {name:'Ausführlich',  text:'Sehr geehrte/r {r},\n\nich hoffe, diese Nachricht erreicht Sie gut.\n\nleider muss ich Ihnen mitteilen, dass ich am heutigen Tag, dem {d}, krankheitsbedingt nicht am Unterricht teilnehmen kann. Ich werde mich ausruhen, um schnell wieder fit zu sein, und reiche bei längerer Erkrankung eine ärztliche Bescheinigung nach. Den verpassten Stoff arbeite ich eigenständig nach. Vielen Dank für Ihr Verständnis.'},
+  ],
+};
+
+function buildMailText(type, recipient, dateStr){
+  const variants = mailVariants[type];
+  let idx;
+  if(emailCfg.variant === 'random' || emailCfg.variant === undefined || emailCfg.variant === null){
+    idx = Math.floor(Math.random()*variants.length);
+  } else {
+    idx = Math.min(emailCfg.variant, variants.length-1);
+  }
+  const tpl = variants[idx].text;
+  return tpl.replace(/{greet}/g, getGreeting()).replace(/{r}/g, recipient).replace(/{d}/g, dateStr);
+}
 
 function sendMail(type){
   const to=document.getElementById('emailTo').value.trim();
@@ -925,9 +1026,8 @@ function sendMail(type){
   const recipient=document.getElementById('emailRecipient').value.trim()||'Frau/Herr [Name]';
   const dateStr=fmt(todayStr());
   const sign='\n\nMit freundlichen Grüßen\n'+(name||'[Dein Name]');
-  const variants=mailVariants(recipient)[type];
-  const bodyText=variants[Math.floor(Math.random()*variants.length)](dateStr)+sign;
-  const subjects={online:'Online-Teilnahme am '+dateStr,praesenz:'Präsenz-Bestätigung am '+dateStr,urlaub:'Abwesenheit am '+dateStr};
+  const bodyText=buildMailText(type, recipient, dateStr)+sign;
+  const subjects={online:'Online-Teilnahme am '+dateStr,praesenz:'Präsenz-Bestätigung am '+dateStr,urlaub:'Abwesenheit am '+dateStr,krank:'Krankmeldung am '+dateStr};
   const subject=subjects[type];
   const subjectEnc=encodeURIComponent(subject);
   const body=encodeURIComponent(bodyText);
